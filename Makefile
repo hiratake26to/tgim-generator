@@ -1,14 +1,24 @@
 PROGRAM = a.out
-OBJS 	= main.o manager.o pool.o network.o NetUnit.o NetSeg.o InternetStack.o Link.o
+
+SRC_DIR = ./src/ ./src/ns3gen/
+SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
+
+OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
 CFLAGS  = -I./include
 CXXFLAGS  = -std=c++11 -I./include
-VPATH 	= ./include/ ./src/
+VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)
 	$(CXX) -o $(PROGRAM) $^
 
+
+.PHONY: clean debug test
+
 clean:
-	rm -f $(OBJS)
+	rm -f $(PROGRAM) $(OBJS)
+
+debug:
+	echo $(OBJS)
 
 test:
 	make clean; make;

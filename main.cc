@@ -2,59 +2,14 @@
 #include <string>
 
 #include "network.h"
+#include "TmgrRepl.h"
+#include "ns3gen/Generator.h"
 
 using std::cout;
 using std::cin;
 using std::endl;
 using std::string;
-using std::vector;
 
-class Repl {
-  NetUnit *net;
-
-  vector<NetUnit> units;
-  vector<Node> nodes;
-public:
-  enum Res {
-    QUIT,
-    TEST,
-    SUCCESS,
-  };
-
-public:
-  Repl() {
-    net = new NetUnit("type", "unit_0");
-  }
-  ~Repl() {
-    delete net;
-  }
-  Res eval(const std::string& cmd) {
-    if (cmd == "quit") return QUIT;
-    if (cmd == "test") return TEST;
-    if (cmd == "dump") return dump();
-    if (cmd == "addUnit") return addUnit();
-    if (cmd == "addNode") return addNode();
-  }
-
-private:
-  Res addUnit() {
-    cout << "not available!" << endl;
-    return SUCCESS;
-  }
-
-  Res addNode() {
-    Node a;
-    a.SetId(nodes.size());
-    nodes.push_back(a);
-    net->AddNode(a);
-    return SUCCESS;
-  }
-
-  Res dump() {
-    net->DumpJson();
-    return SUCCESS;
-  }
-};
 
 void eval_test();
 
@@ -106,6 +61,12 @@ int main(int argc, char *argv[]) {
 }
 
 void eval_test() {
+
+  NetworkGenerator gen;
+  for (auto line : gen.CppCode()) {
+    cout << line << endl;
+  }
+
   Network net;
   NetUnit uni("type", "uni_1");
     Node a; a.SetId(0);
@@ -114,5 +75,5 @@ void eval_test() {
   uni.AddNode(b);
   uni.AddLink(a, b);
 
-  uni.DumpJson();
+  //uni.DumpJson();
 }

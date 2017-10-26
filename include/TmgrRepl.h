@@ -13,54 +13,68 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file NetUnit.h
- * \brief Network Unit class.
+ * \file TmgrRepl.h
+ * \brief Topology manager REPL class
  * \author hiratake26to@gmail
  * \date 2017
  */
 
 #pragma once
 
-#include "network-prvt.h"
+#include <iostream>
+#include <string>
 
-#include "Network.h"
-#include "node/Node.h"
-#include "link/Link.h"
+#include "network.h"
 
-/** @brief Network segment model **/
-class NetUnit : public Network {
-  /** Network segment type **/
-  std::string m_type;
-  /** Network segment name **/
-  std::string m_name;
-  /** This net unit id */
-  int net_unit_id;
-  /** Node(:NetworkSegment) list **/
-  int node_tbl_id;
-  /** Link table **/
-  int link_tbl_id;
+using std::cout;
+using std::cin;
+using std::endl;
+using std::string;
+using std::vector;
 
-  std::vector<int> m_nodes;
-  std::vector<Link> m_links;
+class Repl {
+  NetUnit *net;
+
+  vector<NetUnit> units;
+  vector<Node> nodes;
+public:
+  enum Res {
+    QUIT,
+    TEST,
+    SUCCESS,
+  };
 
 public:
-  /** Constructor **/
-  explicit NetUnit(const std::string& type, const std::string& name);
-
-  /** Destructor **/
-  virtual ~NetUnit() = default;
-
-public:
-  /** Add node to network **/
-  void AddNode(const Node& node);
-
-  /** Add a link from node to node **/
-  void AddLink(const Node& first, const Node& second);
-
-  /** dump format JSON */
-  void DumpJson();
+  Repl() {
+    net = new NetUnit("type", "unit_0");
+  }
+  ~Repl() {
+    delete net;
+  }
+  Res eval(const std::string& cmd) {
+    if (cmd == "quit") return QUIT;
+    if (cmd == "test") return TEST;
+    if (cmd == "dump") return dump();
+    if (cmd == "addUnit") return addUnit();
+    if (cmd == "addNode") return addNode();
+  }
 
 private:
-  void dump(std::string msg, bool nl = false);
-};
+  Res addUnit() {
+    cout << "not available!" << endl;
+    return SUCCESS;
+  }
 
+  Res addNode() {
+    Node a;
+    a.SetId(nodes.size());
+    nodes.push_back(a);
+    net->AddNode(a);
+    return SUCCESS;
+  }
+
+  Res dump() {
+    net->DumpJson();
+    return SUCCESS;
+  }
+};
