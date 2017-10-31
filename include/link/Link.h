@@ -24,6 +24,26 @@ Author: hiratake26to@gmail.com
 #include "network-prvt.h"
 #include "LinkAttr.h"
 
+#include "node/Node.h"
+
+struct Link {
+  int id;
+  std::string name;
+  std::string first;
+  std::string second;
+
+  std::string config;
+
+  /*
+  Link(const Node& nf, const Node& ns) {
+    this->first = nf.id;
+    this->second = nf.id;
+  }
+  */
+  //int attribute;
+};
+
+#if 0
 /** @brief Link model **/
 class Link {
   LinkAttr attr;
@@ -48,3 +68,4 @@ public:
   void getDelay(int delay);
   */
 };
+#endif

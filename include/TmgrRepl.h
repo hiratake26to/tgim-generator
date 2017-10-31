@@ -42,6 +42,7 @@ public:
     QUIT,
     TEST,
     SUCCESS,
+    NONE,
   };
 
 public:
@@ -53,10 +54,11 @@ public:
   }
   Res eval(const std::string& cmd) {
     if (cmd == "quit") return QUIT;
-    if (cmd == "test") return TEST;
-    if (cmd == "dump") return dump();
-    if (cmd == "addUnit") return addUnit();
-    if (cmd == "addNode") return addNode();
+    else if (cmd == "test") return TEST;
+    else if (cmd == "dump") return dump();
+    else if (cmd == "addUnit") return addUnit();
+    else if (cmd == "addNode") return addNode();
+    return NONE;
   }
 
 private:
@@ -66,10 +68,7 @@ private:
   }
 
   Res addNode() {
-    Node a;
-    a.SetId(nodes.size());
-    nodes.push_back(a);
-    net->AddNode(a);
+    net->AddNode("node");
     return SUCCESS;
   }
 

@@ -4,16 +4,12 @@
 
 #include "InternetStack.h"
 #include "Device.h"
+#include <string>
 
 /** @brief Node */
-class Node {
-  // internet stack config
-  InternetStack internet_stack;
-  // installed devices
-  Device device;
+struct Node {
+  int id;
+  std::string name;
 
-  int m_id;
-public:
-  int SetId(int id) { m_id = id; }
-  int GetId() const { return m_id; }
+  std::string config;
 };

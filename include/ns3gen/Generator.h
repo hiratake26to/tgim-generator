@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 #include "CodeSecretary.h"
+#include "net/NetUnit.h"
+#include "node/Node.h"
+#include "link/Link.h"
 
 class BaseGenerator {
 public:
@@ -16,38 +19,18 @@ class MainGenerator : public BaseGenerator {
 // network unit file
 class NetworkGenerator : public BaseGenerator {
   std::string name;
-  int id;
-  struct Node {
-    std::string name;
-    int id;
-  };
-  struct Link {
-    std::string name;
-    int id;
-    int first;
-    int second;
-  };
-  std::vector<Node> nodes;
-  std::vector<Link> links;
+  std::map<std::string, Node> nodes;
+  std::map<std::string, Link> links;
 
 public:
-  NetworkGenerator() {
-    // this
-    this->id = 0;
+  NetworkGenerator(NetUnit net) {
     // nodes
-    nodes.push_back({"",0});
-    nodes.push_back({"",1});
+    nodes = net.GetNodes();
     // links
-    links.push_back({"",0,0,1});
+    links = net.GetLinks();
 
     // name
-    this->name = "NetworkUnit_" + std::to_string(this->id);
-    for (auto& node : nodes) {
-      node.name = "node_" + std::to_string(node.id);
-    }
-    for (auto& link : links) {
-      link.name = "link_" + std::to_string(link.id);
-    }
+    this->name = net.GetName();
   }
   std::vector<std::string> CppCode() {
     CodeSecretary lines;
@@ -60,14 +43,16 @@ public:
     /// variables
     // create nodes
     lines.push_back("// create nodes");
-    for (const auto& node : nodes) {
+    for (const auto& item : nodes) {
+      const auto& node = item.second;
       lines.push_back("Node " + node.name + ";");
     }
 
     /// create only link
     lines.push_back("// create link");
-    for (const auto& link : links) {
-      lines.push_back("PointToPointHelper " + link.name+ ";");
+    for (const auto& item : links) {
+      const auto& link = item.second;
+      lines.push_back("PointToPointHelper " + link.name + ";");
     }
 
     /// init begin
@@ -78,18 +63,20 @@ public:
 
     // connect nodes via link
     lines.push_back("// connect link");
-    for (const auto& link : links) {
+    for (const auto& item : links) {
+      const auto& link = item.second;
       lines.push_back( link.name + ".install("
-                        + std::to_string(link.first)
+                        + link.first
                         + ","
-                        + std::to_string(link.second)
+                        + link.second
                       + ");" );
     }
 
     // install Internet stack
     lines.push_back("// install internet stack");
     lines.push_back("InternetStackHelper stack;");
-    for (const auto& node : nodes) {
+    for (const auto& item : nodes) {
+      const auto& node = item.second;
       lines.push_back("stack.Install(" + node.name + ");");
     }
 

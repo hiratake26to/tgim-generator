@@ -21,6 +21,7 @@ public:
   void getDelay(int delay);
 };
 */
+#if 0
 Link::Link(const Node& first, const Node& second)
 {
   attr.setNodePare(first.GetId(), second.GetId());
@@ -70,3 +71,4 @@ int LinkAttr::getSecond()
 {
   return this->second;
 }
+#endif

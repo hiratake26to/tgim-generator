@@ -3,8 +3,6 @@
 #include "node/Node.h"
 
 struct LinkAttr {
-  int first;
-  int second;
   int rate;
   int delay;
 public:

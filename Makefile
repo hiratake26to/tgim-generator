@@ -1,6 +1,6 @@
 PROGRAM = a.out
 
-SRC_DIR = ./src/ ./src/ns3gen/
+SRC_DIR = ./src/ ./src/ns3gen/ ./test/
 SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
 
 OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
@@ -23,3 +23,11 @@ debug:
 test:
 	make clean; make;
 	./$(PROGRAM) --debug
+
+lex: src/tmgr.l
+	yacc -d src/tmgr.y
+	flex $<
+
+yacc: src/tmgr.y lex
+	yacc -d $<
+	$(CC) y.tab.c

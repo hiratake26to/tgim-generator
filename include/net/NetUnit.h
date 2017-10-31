@@ -40,8 +40,8 @@ class NetUnit : public Network {
   /** Link table **/
   int link_tbl_id;
 
-  std::vector<int> m_nodes;
-  std::vector<Link> m_links;
+  std::map<std::string, Node> m_nodes;
+  std::map<std::string, Link> m_links;
 
 public:
   /** Constructor **/
@@ -52,15 +52,19 @@ public:
 
 public:
   /** Add node to network **/
-  void AddNode(const Node& node);
+  void AddNode(std::string name);
 
   /** Add a link from node to node **/
-  void AddLink(const Node& first, const Node& second);
+  void AddLink(std::string name, std::string first, std::string second);
+
+  void NodeConf(std::string name, std::string conf);
+  void LinkConf(std::string name, std::string conf);
+
+  std::string GetName();
+  std::map<std::string, Node> GetNodes();
+  std::map<std::string, Link> GetLinks();
 
   /** dump format JSON */
   void DumpJson();
-
-private:
-  void dump(std::string msg, bool nl = false);
 };
 
