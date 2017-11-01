@@ -65,35 +65,10 @@ int main(int argc, char *argv[]) {
 #include <boost/algorithm/string.hpp>
 
 void eval_test() {
-  using namespace boost::algorithm;
-
-#if 0
-  cout << "Schema test ***" << endl;
-
-  Schema::Schema s; // net unit schema
-
-  // this schema
-  // attr_name, attr_value
-  s.update("name", "unit_0");
-  // child_schema, attr_name, attr_value
-  s.update("node.node_0", "delay", "100ms");
-  s.update("node.node_0", "rate", "64kbps");
-  s.update("link.link_0", "first", "node.node_0");
-  s.update("link.link_0", "second", "node.node_1");
-
-  cout << s.toString() << endl;
-
-  cout << "***" << endl;
-
-  // ---
-
-  NetworkGenerator gen;
-  for (auto line : gen.CppCode()) {
-    cout << line << endl;
-  }
-#endif
+  //using namespace boost::algorithm;
 
   Network net;
+
   NetUnit uni("type", "uni_1");
   // Network Node
     Node a{0, "node_0"};
@@ -113,4 +88,12 @@ void eval_test() {
   //uni.Iface("iface_1").attatch("node_0");
 
   uni.DumpJson();
+
+  // ---
+
+  NetworkGenerator gen(uni);
+  for (auto line : gen.CppCode()) {
+    cout << line << endl;
+  }
+
 }
