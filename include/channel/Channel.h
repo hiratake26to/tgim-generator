@@ -13,8 +13,8 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file NetUnit.h
- * \brief Network Unit class.
+ * \file Channel.h
+ * \brief Network Channel Model.
  * \author hiratake26to@gmail
  * \date 2017
  */
@@ -22,50 +22,10 @@ Author: hiratake26to@gmail.com
 #pragma once
 
 #include "network-prvt.h"
-#include <memory>
 
-#include "Network.h"
-#include "node/Node.h"
-#include "channel/Link.h"
-
-/** @brief Network segment model **/
-class NetUnit : public Network {
-  /** Network segment type **/
-  std::string m_type;
-  /** Network segment name **/
-  std::string m_name;
-  /** This net unit id */
-  int net_unit_id;
-  /** Node(:NetworkSegment) list **/
-  int node_tbl_id;
-  /** Link table **/
-  int link_tbl_id;
-
-  std::map<std::string, Node> m_nodes;
-  std::map<std::string, std::shared_ptr<Channel>> m_channels;
-
-public:
-  /** Constructor **/
-  explicit NetUnit(const std::string& type, const std::string& name);
-
-  /** Destructor **/
-  virtual ~NetUnit() = default;
-
-public:
-  /** Add node to network **/
-  void AddNode(std::string name);
-
-  /** Add a link from node to node **/
-  void AddLink(std::string name, std::string first, std::string second);
-
-  void NodeConf(std::string name, std::string conf);
-  void LinkConf(std::string name, std::string conf);
-
-  std::string GetName();
-  std::map<std::string, Node> GetNodes();
-  std::map<std::string, std::shared_ptr<Channel>> GetChannels();
-
-  /** dump format JSON */
-  void DumpJson();
+struct Channel {
+  std::string name;
+  std::string config;
+  virtual std::string GetType() = 0;
 };
 

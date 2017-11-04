@@ -23,10 +23,13 @@ Author: hiratake26to@gmail.com
 
 #include <string>
 #include <vector>
+#include <unordered_map>
+#include <memory>
 #include "CodeSecretary.h"
 #include "net/NetUnit.h"
 #include "node/Node.h"
-#include "link/Link.h"
+#include "channel/Channel.h"
+#include "channel/Link.h"
 #include <boost/range/adaptor/indexed.hpp>
 
 class BaseGenerator {
@@ -47,7 +50,10 @@ class NetworkGenerator : public BaseGenerator {
   // node
   std::map<std::string, Node> nodes;
   // channel
-  std::map<std::string, Link> links;
+  std::map<std::string, std::shared_ptr<Channel>> channels;
+
+  // netdevice (channel_name , netdev_name)
+  std::map<std::string, std::string> netdevs;
 
 public:
   /**
@@ -56,8 +62,8 @@ public:
   NetworkGenerator(NetUnit net) {
     // nodes
     this->nodes = net.GetNodes();
-    // links
-    this->links = net.GetLinks();
+    // channels
+    this->channels = net.GetChannels();
     // name
     this->name = net.GetName();
   }
@@ -69,6 +75,7 @@ public:
 
     // namespace begin
     lines.push_back("namespace tgim {");
+    // struct struct
     lines.push_back("struct " + name + " {");
     lines.indentRight();
 
@@ -78,9 +85,10 @@ public:
     // build function
     gen_build(lines);
 
-    // namespace end
     lines.indentLeft();
-    lines.push_back("}");
+    // struct end
+    lines.push_back("};");
+    // namespace end
     lines.push_back("}");
 
     return lines.get(); 
@@ -113,10 +121,13 @@ private:
     lines.push_back(" ******************************************************/");
 
     // link conf
-    lines.push_back("// P2P link");
-    for (const auto& item : links) {
-      const auto& link = item.second;
-      lines.push_back("PointToPointHelper " + link.name + ";");
+    lines.push_back("// helper");
+    std::unordered_map<std::string, std::string> helper_name_map;
+    helper_name_map["PointToPoint"] = "PointToPointHelper";
+    for (const auto& item : channels) {
+      const auto& channel = item.second;
+      lines.push_back(helper_name_map[channel->GetType()]
+                        + " " + channel->name + ";");
     }
 
     // %%
@@ -129,6 +140,13 @@ private:
     // all nodes
     lines.push_back("// nodes");
     lines.push_back("NodeContainer " + name_all_nodes + ";");
+    // netdevices
+    for (const auto& item : channels) {
+      const auto& channel = item.second;
+      netdevs[channel->name] = "ndc_" + channel->name;
+      lines.push_back("NetDeviceContainer " + netdevs[channel->name] + ";"
+                        + " // P2P link net devices");
+    }
   }
 
   /**
@@ -145,7 +163,7 @@ private:
     lines.push_back("/*******************************************************");
     lines.push_back(" * build function                                      *");
     lines.push_back(" ******************************************************/");
-    lines.push_back(this->name_build_func + "() {");
+    lines.push_back("void " + this->name_build_func + "() {");
     lines.indentRight();
 
     // create all nodes
@@ -168,14 +186,19 @@ private:
 
     // connect nodes via link
     lines.push_back("// connect link");
-    std::string ndc_name = ;
-    for (const auto& item : links) {
-      const auto& link = item.second;
-      lines.push_back( link.name + ".Install("
-                        + link.first
+    std::unordered_map<std::string, std::function<void(Channel*)>> connetor;
+    connetor["PointToPoint"] = [=, &lines](Channel *channel) { 
+      Link link = *dynamic_cast<Link*>(channel);
+      lines.push_back( netdevs[link.name] + " = "
+                        + link.name + ".Install("
+                        + this->name_all_nodes + ".Get(" + link.first + ")"
                         + ","
-                        + link.second
+                        + this->name_all_nodes + ".Get(" + link.second + ")"
                       + ");" );
+    };
+    for (const auto& item : channels) {
+      const auto& channel = item.second;
+      connetor[channel->GetType()](channel.get());
     }
 
     // assign IP address
@@ -185,7 +208,9 @@ private:
     lines.push_back("InternetStackHelper stack;");
     for (const auto& item : nodes) {
       const auto& node = item.second;
-      lines.push_back("stack.Install(" + node.name + ");");
+      lines.push_back("stack.Install("
+                        + this->name_all_nodes + ".Get(" + node.name + ")"
+                        + ");" );
     }
 
     // routing
@@ -193,7 +218,7 @@ private:
 
     /// function end
     lines.indentLeft();
-    lines.push_back("};");
+    lines.push_back("}");
   }
 
 };

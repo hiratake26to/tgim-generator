@@ -25,7 +25,7 @@ Author: hiratake26to@gmail.com
 
 #include "Network.h"
 #include "NetSeg.h"
-#include "link/Link.h"
+#include "channel/Link.h"
 
 class NetSeg : public Network {
   std::string m_type;

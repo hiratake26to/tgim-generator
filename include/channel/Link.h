@@ -22,18 +22,24 @@ Author: hiratake26to@gmail.com
 #pragma once
 
 #include "network-prvt.h"
-#include "LinkAttr.h"
-
+#include "channel/Channel.h"
 #include "node/Node.h"
 
-struct Link {
-  int id;
-  std::string name;
+struct Link : public Channel {
+  int id = -1;
   std::string first;
   std::string second;
 
-  std::string config;
+  std::string GetType() {
+    return "PointToPoint";
+  }
 
+  Link() = default;
+  Link(int id, std::string name, std::string first, std::string second, std::string config = "")
+  : id(id), first(first), second(second) {
+    Channel::name = name;
+    Channel::config = config;
+  }
   /*
   Link(const Node& nf, const Node& ns) {
     this->first = nf.id;

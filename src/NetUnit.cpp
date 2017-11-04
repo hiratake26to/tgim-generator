@@ -1,6 +1,6 @@
 #include "net/NetUnit.h"
+#include "channel/Link.h"
 #include "node/Node.h"
-#include "link/Link.h"
 
 #include <iostream>
 #include "schema/Schema.hpp"
@@ -23,7 +23,7 @@ void NetUnit::AddNode(std::string name)
 /** Add a link from node to node **/
 void NetUnit::AddLink(std::string name, std::string first, std::string second)
 {
-  m_links[name] = Link { (int)m_links.size(), name, first, second };
+  m_channels[name] = std::shared_ptr<Channel>(new Link ( (int)m_channels.size(), name, first, second ));
 }
 
 void NetUnit::NodeConf(std::string name, std::string conf)
@@ -33,7 +33,7 @@ void NetUnit::NodeConf(std::string name, std::string conf)
 
 void NetUnit::LinkConf(std::string name, std::string conf)
 {
-  m_links[name].config = conf;
+  m_channels[name]->config = conf;
 }
 
 std::string NetUnit::GetName()
@@ -46,9 +46,9 @@ std::map<std::string, Node> NetUnit::GetNodes()
   return m_nodes;
 }
 
-std::map<std::string, Link> NetUnit::GetLinks()
+std::map<std::string, std::shared_ptr<Channel>> NetUnit::GetChannels()
 {
-  return m_links;
+  return m_channels;
 }
 
 void NetUnit::DumpJson()
@@ -63,11 +63,18 @@ void NetUnit::DumpJson()
     s.update((std::string)"node."+item.first, "id", item.second.id ) ;
     s.update((std::string)"node."+item.first, "conf", item.second.config ) ;
   }
-  for (const auto& item : m_links) {
-    s.update((std::string)"link."+item.first, "id", item.second.id ) ;
-    s.update((std::string)"link."+item.first, "first", item.second.first ) ;
-    s.update((std::string)"link."+item.first, "second", item.second.second ) ;
-    s.update((std::string)"link."+item.first, "conf", item.second.config ) ;
+  for (const auto& item : m_channels) {
+    const auto& channel = item.second;
+    if (channel->GetType() == "PointToPoint") {
+      Link *link = dynamic_cast<Link*>(channel.get());
+      s.update((std::string)"link."+link->name, "id", link->id ) ;
+      s.update((std::string)"link."+link->name, "first", link->first ) ;
+      s.update((std::string)"link."+link->name, "second", link->second ) ;
+      s.update((std::string)"link."+link->name, "conf", link->config ) ;
+    } else {
+      std::cout << "faild get channel!!" << std::endl;
+    }
+
   }
 
   cout << s.toString() << endl;
