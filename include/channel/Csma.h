@@ -13,8 +13,8 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file Link.h
- * \brief Network Link Model.
+ * \file Csma.h
+ * \brief Network Csma Model.
  * \author hiratake26to@gmail
  * \date 2017
  */
@@ -25,26 +25,18 @@ Author: hiratake26to@gmail.com
 #include "channel/Channel.h"
 #include "node/Node.h"
 
-struct Link : public Channel {
+struct Csma : public Channel {
   using Channel::Channel;
 
-  std::string first;
-  std::string second;
-
   std::string GetType() {
-    return "PointToPoint";
+    return "Csma";
   }
 
-  Link() = default;
-  explicit Link(const Channel& ch) {
+  Csma() = default;
+  explicit Csma(const Channel& ch) {
     Channel::name = ch.name;
     Channel::nodes = ch.nodes;
     Channel::config = ch.config;
   }
-  Link(std::string name, std::string first, std::string second, std::string config = "")
-  : Channel(name, config), first(first), second(second)
-  {
-    //
-  }
-};
 
+};

@@ -29,6 +29,7 @@ Author: hiratake26to@gmail.com
 #include "net/NetUnit.h"
 #include "node/Node.h"
 #include "channel/Channel.h"
+#include "channel/Csma.h"
 #include "channel/Link.h"
 #include <boost/range/adaptor/indexed.hpp>
 
@@ -122,14 +123,34 @@ private:
     lines.push_back(" * section [config this when before build if you need] *");
     lines.push_back(" ******************************************************/");
 
-    // link conf
+    // channel helper
     lines.push_back("// helper");
     std::unordered_map<std::string, std::string> helper_name_map;
     helper_name_map["PointToPoint"] = "PointToPointHelper";
+    helper_name_map["Csma"] = "CsmaHelper";
     for (const auto& item : channels) {
-      const auto& channel = item.second;
-      lines.push_back(helper_name_map[channel->GetType()]
-                        + " " + channel->name + ";");
+      const auto& ch_buf = item.second;
+      if ( helper_name_map[ch_buf->GetType()] != "" ) {
+        lines.push_back(helper_name_map[ch_buf->GetType()]
+                          + " " + ch_buf->name + ";");
+      } else {
+        if ( ch_buf->nodes.size() < 2 )
+        {
+          lines.push_back("// [TGIM ERR] Channel '"
+                            + ch_buf->name
+                            + "' is node count is less then 2.");
+        }
+        else if ( ch_buf->nodes.size() == 2 )
+        {
+          lines.push_back(helper_name_map["PointToPoint"]
+                            + " " + ch_buf->name + ";");
+        }
+        else if ( ch_buf->nodes.size() > 2 )
+        {
+          lines.push_back(helper_name_map["Csma"]
+                            + " " + ch_buf->name + ";");
+        }
+      }
     }
 
     // %%
@@ -146,8 +167,7 @@ private:
     for (const auto& item : channels) {
       const auto& channel = item.second;
       netdevs[channel->name] = "ndc_" + channel->name;
-      lines.push_back("NetDeviceContainer " + netdevs[channel->name] + ";"
-                        + " // P2P link net devices");
+      lines.push_back("NetDeviceContainer " + netdevs[channel->name] + ";");
     }
   }
 
@@ -200,6 +220,25 @@ private:
                           + this->name_all_nodes + ".Get(" + link.second + ")"
                         + ");" );
       };
+    connector["Csma"]
+      = [=, &lines](Channel *channel) { 
+        Csma csma = *dynamic_cast<Csma*>(channel);
+        // make node container
+        lines.push_back( "{" );
+        lines.indentRight();
+        lines.push_back( "NodeContainer nc_local;" );
+        // add node
+        for (const auto& node : csma.nodes) {
+          lines.push_back( "nc_local.Add("
+                          + this->name_all_nodes + ".Get(" + node + ")"
+                          + ");" );
+        }
+        // connect csma
+        lines.push_back( netdevs[csma.name] + " = "
+                          + csma.name + ".Install(nc_local);" );
+        lines.indentLeft();
+        lines.push_back( "}" );
+      };
     // -- connect node to channel
     for (const auto& item : channels) {
       std::shared_ptr<Channel> ch_buf = item.second;
@@ -215,20 +254,24 @@ private:
         ch_buf.reset(new Channel(*ch_buf));  // replace to copy from original
         if ( ch_buf->nodes.size() < 2 )
         {
-          lines.push_back("// [TGIM ERR] Channel's node count is less then 2.");
+          lines.push_back("// [TGIM ERR] Channel '"
+                            + ch_buf->name
+                            + "' is node count is less then 2.");
         }
         else if ( ch_buf->nodes.size() == 2 )
         {
-          Link *linkptr = new Link();
-          linkptr->name = ch_buf->name;
+          Link *linkptr = new Link(*ch_buf);
           linkptr->first = ch_buf->nodes[0];
           linkptr->second = ch_buf->nodes[1];
           ch_buf.reset(static_cast<Channel*>(linkptr));
           auto_channels[ch_buf->name] = ch_buf;
         }
-        //else if ( ch_buf->nodes.size() > 2 )
-        //{
-        //}
+        else if ( ch_buf->nodes.size() > 2 )
+        {
+          Csma *csmaptr = new Csma(*ch_buf);
+          ch_buf.reset(static_cast<Channel*>(csmaptr));
+          auto_channels[ch_buf->name] = ch_buf;
+        }
       }
     }
     for (const auto& item : auto_channels) {

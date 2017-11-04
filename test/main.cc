@@ -78,6 +78,12 @@ void eval_test() {
   // Wire Link
   uni.ConnectChannel("link_0", "node_0");
   uni.ConnectChannel("link_0", "node_1");
+
+  uni.ConnectChannel("csma_0", "node_1");
+  uni.ConnectChannel("csma_0", "node_2");
+  uni.ConnectChannel("csma_0", "node_3");
+
+  uni.ConnectChannel("link_1", "node_4");
   //uni.at("link_0").config = "{\"delay\":\"100ms\", \"rate\":\"64kbps\"}";
   // Wireless Channel 
   //uni.Channel("ch_0").create;
