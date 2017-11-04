@@ -26,7 +26,6 @@ Author: hiratake26to@gmail.com
 #include "node/Node.h"
 
 struct Link : public Channel {
-  int id = -1;
   std::string first;
   std::string second;
 
@@ -35,10 +34,10 @@ struct Link : public Channel {
   }
 
   Link() = default;
-  Link(int id, std::string name, std::string first, std::string second, std::string config = "")
-  : id(id), first(first), second(second) {
-    Channel::name = name;
-    Channel::config = config;
+  Link(std::string name, std::string first, std::string second, std::string config = "")
+  : Channel(name, config), first(first), second(second)
+  {
+    //
   }
   /*
   Link(const Node& nf, const Node& ns) {

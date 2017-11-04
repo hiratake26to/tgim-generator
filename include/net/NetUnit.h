@@ -26,7 +26,7 @@ Author: hiratake26to@gmail.com
 
 #include "Network.h"
 #include "node/Node.h"
-#include "channel/Link.h"
+#include "channel/Channel.h"
 
 /** @brief Network segment model **/
 class NetUnit : public Network {
@@ -56,10 +56,10 @@ public:
   void AddNode(std::string name);
 
   /** Add a link from node to node **/
-  void AddLink(std::string name, std::string first, std::string second);
+  void ConnectChannel(std::string name, std::string node_name);
 
   void NodeConf(std::string name, std::string conf);
-  void LinkConf(std::string name, std::string conf);
+  //void LinkConf(std::string name, std::string conf);
 
   std::string GetName();
   std::map<std::string, Node> GetNodes();

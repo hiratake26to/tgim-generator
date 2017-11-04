@@ -20,10 +20,12 @@ void NetUnit::AddNode(std::string name)
   m_nodes[name] = added;
 }
 
-/** Add a link from node to node **/
-void NetUnit::AddLink(std::string name, std::string first, std::string second)
+void NetUnit::ConnectChannel(std::string name, std::string node_name)
 {
-  m_channels[name] = std::shared_ptr<Channel>(new Link ( (int)m_channels.size(), name, first, second ));
+  if ( !m_channels[name] ) {
+    m_channels[name] = std::shared_ptr<Channel>(new Channel( name ));
+  }
+  m_channels[name]->nodes.push_back(node_name);
 }
 
 void NetUnit::NodeConf(std::string name, std::string conf)
@@ -31,10 +33,12 @@ void NetUnit::NodeConf(std::string name, std::string conf)
   m_nodes[name].config = conf;
 }
 
+/*
 void NetUnit::LinkConf(std::string name, std::string conf)
 {
   m_channels[name]->config = conf;
 }
+*/
 
 std::string NetUnit::GetName()
 {
@@ -67,7 +71,6 @@ void NetUnit::DumpJson()
     const auto& channel = item.second;
     if (channel->GetType() == "PointToPoint") {
       Link *link = dynamic_cast<Link*>(channel.get());
-      s.update((std::string)"link."+link->name, "id", link->id ) ;
       s.update((std::string)"link."+link->name, "first", link->first ) ;
       s.update((std::string)"link."+link->name, "second", link->second ) ;
       s.update((std::string)"link."+link->name, "conf", link->config ) ;

@@ -4,8 +4,8 @@ SRC_DIR = ./src/ ./src/ns3gen/ ./test/
 SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
 
 OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
-CFLAGS  = -I./include
-CXXFLAGS  = -std=c++11 -I./include
+CFLAGS  = -I./include -g
+CXXFLAGS  = -std=c++11 -I./include -g
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)

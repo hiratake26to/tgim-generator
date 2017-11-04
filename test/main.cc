@@ -76,7 +76,8 @@ void eval_test() {
   uni.AddNode("node_0");
   uni.AddNode("node_1");
   // Wire Link
-  uni.AddLink("link_0", "node_0", "node_1");
+  uni.ConnectChannel("link_0", "node_0");
+  uni.ConnectChannel("link_0", "node_1");
   //uni.at("link_0").config = "{\"delay\":\"100ms\", \"rate\":\"64kbps\"}";
   // Wireless Channel 
   //uni.Channel("ch_0").create;
