@@ -12,7 +12,7 @@ $(PROGRAM): $(OBJS)
 	$(CXX) -o $(PROGRAM) $^
 
 
-.PHONY: clean debug test
+.PHONY: clean debug run lex yacc
 
 clean:
 	rm -f $(PROGRAM) $(OBJS)
@@ -20,8 +20,8 @@ clean:
 debug:
 	echo $(OBJS)
 
-test:
-	make clean; make;
+run:
+	make;
 	./$(PROGRAM) --debug
 
 lex: src/tmgr.l

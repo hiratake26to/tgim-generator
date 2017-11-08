@@ -25,13 +25,12 @@ Author: hiratake26to@gmail.com
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include "CodeSecretary.h"
 #include "net/NetUnit.h"
 #include "node/Node.h"
 #include "channel/Channel.h"
 #include "channel/Csma.h"
 #include "channel/Link.h"
-#include <boost/range/adaptor/indexed.hpp>
+#include "CodeSecretary.h"
 
 class BaseGenerator {
 public:
@@ -62,114 +61,15 @@ public:
   /**
    * @brief constructor
    */
-  NetworkGenerator(NetUnit net) {
-    // nodes
-    this->nodes = net.GetNodes();
-    // channels
-    this->channels = net.GetChannels();
-    // name
-    this->name = net.GetName();
-  }
+  NetworkGenerator(NetUnit net);
   /**
    * @brief generate NS3 C++ code
    */
-  std::vector<std::string> CppCode() {
-    CodeSecretary lines;
-
-    // namespace begin
-    lines.push_back("namespace tgim {");
-    // struct struct
-    lines.push_back("struct " + name + " {");
-    lines.indentRight();
-
-    // declare
-    gen_decl(lines);
-
-    // build function
-    gen_build(lines);
-
-    lines.indentLeft();
-    // struct end
-    lines.push_back("};");
-    // namespace end
-    lines.push_back("}");
-
-    return lines.get(); 
-  }
+  std::vector<std::string> CppCode();
 
 private:
   /** variable declare */
-  void gen_decl(CodeSecretary& lines) {
-    lines.push_back("/*******************************************************");
-    lines.push_back(" * section [we can always use]                         *");
-    lines.push_back(" ******************************************************/");
-
-    // each node
-    lines.push_back("// enum node name");
-    lines.push_back("enum NodeName {");
-    lines.indentRight();
-    for (const auto& item : nodes) {
-      const auto& node = item.second;
-      lines.push_back("" + node.name + ",");
-    }
-    lines.indentLeft();
-    lines.push_back("};");
-
-    // %%
-    lines.push_back("");
-    
-    // section before build
-    lines.push_back("/*******************************************************");
-    lines.push_back(" * section [config this when before build if you need] *");
-    lines.push_back(" ******************************************************/");
-
-    // channel helper
-    lines.push_back("// helper");
-    std::unordered_map<std::string, std::string> helper_name_map;
-    helper_name_map["PointToPoint"] = "PointToPointHelper";
-    helper_name_map["Csma"] = "CsmaHelper";
-    for (const auto& item : channels) {
-      const auto& ch_buf = item.second;
-      if ( helper_name_map[ch_buf->GetType()] != "" ) {
-        lines.push_back(helper_name_map[ch_buf->GetType()]
-                          + " " + ch_buf->name + ";");
-      } else {
-        if ( ch_buf->nodes.size() < 2 )
-        {
-          lines.push_back("// [TGIM ERR] Channel '"
-                            + ch_buf->name
-                            + "' is node count is less then 2.");
-        }
-        else if ( ch_buf->nodes.size() == 2 )
-        {
-          lines.push_back(helper_name_map["PointToPoint"]
-                            + " " + ch_buf->name + ";");
-        }
-        else if ( ch_buf->nodes.size() > 2 )
-        {
-          lines.push_back(helper_name_map["Csma"]
-                            + " " + ch_buf->name + ";");
-        }
-      }
-    }
-
-    // %%
-    lines.push_back("");
-    
-    // section after build
-    lines.push_back("/*******************************************************");
-    lines.push_back(" * section [when after build, we can use this]         *");
-    lines.push_back(" ******************************************************/");
-    // all nodes
-    lines.push_back("// nodes");
-    lines.push_back("NodeContainer " + name_all_nodes + ";");
-    // netdevices
-    for (const auto& item : channels) {
-      const auto& channel = item.second;
-      netdevs[channel->name] = "ndc_" + channel->name;
-      lines.push_back("NetDeviceContainer " + netdevs[channel->name] + ";");
-    }
-  }
+  void gen_decl(CodeSecretary& lines);
 
   /**
    * @brief build function
@@ -179,128 +79,6 @@ private:
    * - config channel
    * - create link
    */
-  void gen_build(CodeSecretary& lines) {
-    // function begin
-    lines.push_back("");
-    lines.push_back("/*******************************************************");
-    lines.push_back(" * build function                                      *");
-    lines.push_back(" ******************************************************/");
-    lines.push_back("void " + this->name_build_func + "() {");
-    lines.indentRight();
-
-    // create all nodes
-    lines.push_back("// create all nodes");
-    lines.push_back(this->name_all_nodes
-                  + ".Create("
-                  + std::to_string(this->nodes.size())
-                  + ");");
-
-    // name each node
-    /*
-    lines.push_back("// name each node");
-    for (const auto& elem : nodes | boost::adaptors::indexed()) {
-      const auto& node = elem.value().second;
-      const auto& i = std::to_string(elem.index());
-      lines.push_back(node.name + " = "
-                    + this->name_all_nodes + ".Get(" + i + ");");
-    }
-    */
-
-    // connect nodes via link
-    lines.push_back("// connect link");
-    // -- connector generate
-    std::unordered_map<std::string, std::function<void(Channel*)>> connector;
-    connector["PointToPoint"]
-      = [=, &lines](Channel *channel) { 
-        Link link = *dynamic_cast<Link*>(channel);
-        lines.push_back( netdevs[link.name] + " = "
-                          + link.name + ".Install("
-                          + this->name_all_nodes + ".Get(" + link.first + ")"
-                          + ","
-                          + this->name_all_nodes + ".Get(" + link.second + ")"
-                        + ");" );
-      };
-    connector["Csma"]
-      = [=, &lines](Channel *channel) { 
-        Csma csma = *dynamic_cast<Csma*>(channel);
-        // make node container
-        lines.push_back( "{" );
-        lines.indentRight();
-        lines.push_back( "NodeContainer nc_local;" );
-        // add node
-        for (const auto& node : csma.nodes) {
-          lines.push_back( "nc_local.Add("
-                          + this->name_all_nodes + ".Get(" + node + ")"
-                          + ");" );
-        }
-        // connect csma
-        lines.push_back( netdevs[csma.name] + " = "
-                          + csma.name + ".Install(nc_local);" );
-        lines.indentLeft();
-        lines.push_back( "}" );
-      };
-    // -- connect node to channel
-    for (const auto& item : channels) {
-      std::shared_ptr<Channel> ch_buf = item.second;
-      if ( connector[ch_buf->GetType()] )
-      {
-        connector[ch_buf->GetType()](ch_buf.get());
-      }
-      else // auto set channel type, this will been generated latest for loop
-      {
-        // generate added channnel name
-        std::string added_ch_name = "link_auto_"+std::to_string(channels.size());
-
-        ch_buf.reset(new Channel(*ch_buf));  // replace to copy from original
-        if ( ch_buf->nodes.size() < 2 )
-        {
-          lines.push_back("// [TGIM ERR] Channel '"
-                            + ch_buf->name
-                            + "' is node count is less then 2.");
-        }
-        else if ( ch_buf->nodes.size() == 2 )
-        {
-          Link *linkptr = new Link(*ch_buf);
-          linkptr->first = ch_buf->nodes[0];
-          linkptr->second = ch_buf->nodes[1];
-          ch_buf.reset(static_cast<Channel*>(linkptr));
-          auto_channels[ch_buf->name] = ch_buf;
-        }
-        else if ( ch_buf->nodes.size() > 2 )
-        {
-          Csma *csmaptr = new Csma(*ch_buf);
-          ch_buf.reset(static_cast<Channel*>(csmaptr));
-          auto_channels[ch_buf->name] = ch_buf;
-        }
-      }
-    }
-    for (const auto& item : auto_channels) {
-      std::shared_ptr<Channel> ch_buf = item.second;
-      if ( connector[ch_buf->GetType()] )
-      {
-        lines.push_back("// [TGIM AUTO]");
-        connector[ch_buf->GetType()](ch_buf.get());
-      }
-    }
-
-    // assign IP address
-
-    // install Internet stack
-    lines.push_back("// install internet stack");
-    lines.push_back("InternetStackHelper stack;");
-    for (const auto& item : nodes) {
-      const auto& node = item.second;
-      lines.push_back("stack.Install("
-                        + this->name_all_nodes + ".Get(" + node.name + ")"
-                        + ");" );
-    }
-
-    // routing
-    // ...
-
-    /// function end
-    lines.indentLeft();
-    lines.push_back("}");
-  }
+  void gen_build(CodeSecretary& lines);
 
 };
