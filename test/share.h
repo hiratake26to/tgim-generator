@@ -3,7 +3,7 @@
 #include <iostream>
 #include <string>
 
-#include "network.h"
+#include "net/Network.h"
 #include "TmgrRepl.h"
 #include "ns3gen/Generator.h"
 #include "schema/Schema.hpp"

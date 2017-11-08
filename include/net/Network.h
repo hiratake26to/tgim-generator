@@ -22,12 +22,49 @@ Author: hiratake26to@gmail.com
 #pragma once
 
 #include "network-prvt.h"
+#include <memory>
 
-/** @brief Network model of base **/
+#include "node/Node.h"
+#include "channel/Channel.h"
+
+/** @brief Network segment model **/
 class Network {
-  int m_id;
+  /** Network segment type **/
+  std::string m_type;
+  /** Network segment name **/
+  std::string m_name;
+  /** This net unit id */
+  int net_unit_id;
+  /** Node(:NetworkSegment) list **/
+  int node_tbl_id;
+  /** Link table **/
+  int link_tbl_id;
+
+  std::map<std::string, Node> m_nodes;
+  std::map<std::string, std::shared_ptr<Channel>> m_channels;
+
 public:
+  /** Constructor **/
+  explicit Network(const std::string& type, const std::string& name);
+
+  /** Destructor **/
   virtual ~Network() = default;
 
-  int GetId() { return m_id; }
+public:
+  /** Add node to network **/
+  void AddNode(std::string name);
+
+  /** Add a link from node to node **/
+  void ConnectChannel(std::string name, std::string node_name);
+
+  void NodeConf(std::string name, std::string conf);
+  //void LinkConf(std::string name, std::string conf);
+
+  std::string GetName();
+  std::map<std::string, Node> GetNodes();
+  std::map<std::string, std::shared_ptr<Channel>> GetChannels();
+
+  /** dump format JSON */
+  void DumpJson();
 };
+

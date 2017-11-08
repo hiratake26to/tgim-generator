@@ -24,7 +24,7 @@ Author: hiratake26to@gmail.com
 #include <iostream>
 #include <string>
 
-#include "network.h"
+#include "net/Network.h"
 
 using std::cout;
 using std::cin;
@@ -33,9 +33,9 @@ using std::string;
 using std::vector;
 
 class Repl {
-  NetUnit *net;
+  Network *net;
 
-  vector<NetUnit> units;
+  vector<Network> units;
   vector<Node> nodes;
 public:
   enum Res {
@@ -47,7 +47,7 @@ public:
 
 public:
   Repl() {
-    net = new NetUnit("type", "unit_0");
+    net = new Network("type", "net_0");
   }
   ~Repl() {
     delete net;
@@ -56,13 +56,13 @@ public:
     if (cmd == "quit") return QUIT;
     else if (cmd == "test") return TEST;
     else if (cmd == "dump") return dump();
-    else if (cmd == "addUnit") return addUnit();
+    else if (cmd == "addNet") return addNet();
     else if (cmd == "addNode") return addNode();
     return NONE;
   }
 
 private:
-  Res addUnit() {
+  Res addNet() {
     cout << "not available!" << endl;
     return SUCCESS;
   }

@@ -25,24 +25,14 @@ Author: hiratake26to@gmail.com
 #include <vector>
 #include <unordered_map>
 #include <memory>
-#include "net/NetUnit.h"
+#include "net/Network.h"
 #include "node/Node.h"
 #include "channel/Channel.h"
 #include "channel/Csma.h"
 #include "channel/Link.h"
 #include "CodeSecretary.h"
 
-class BaseGenerator {
-public:
-};
-
-// main file
-class MainGenerator : public BaseGenerator {
-};
-
-
-// network unit file
-class NetworkGenerator : public BaseGenerator {
+class NetworkGenerator {
   // names
   std::string name;
   std::string name_build_func = "build";
@@ -61,7 +51,7 @@ public:
   /**
    * @brief constructor
    */
-  NetworkGenerator(NetUnit net);
+  NetworkGenerator(Network net);
   /**
    * @brief generate NS3 C++ code
    */

@@ -23,7 +23,7 @@ Author: hiratake26to@gmail.com
 
 #include <boost/range/adaptor/indexed.hpp>
 
-NetworkGenerator::NetworkGenerator(NetUnit net)
+NetworkGenerator::NetworkGenerator(Network net)
 {
   // nodes
   this->nodes = net.GetNodes();
@@ -275,7 +275,8 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
                       + "\"" + base_subnet + "\""
                       + ");" );
     // ip assign
-    lines.push_back ( "Ipv4InterfaceContainer addresses = ip.Assign (" + nd + ");" );
+    //lines.push_back ( "Ipv4InterfaceContainer addresses = ip.Assign (" + nd + ");" );
+    lines.push_back ( "ip.Assign (" + nd + ");" );
   }
   lines.indentLeft();
   lines.push_back("}");
@@ -291,55 +292,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   // applications
   //
 
-  
-  /*
-  lines.push_back( "// Applications" );
-  // NS_LOG_INFO ("Create Source");
-  lines.push_back( "Config::SetDefault (\"ns3::Ipv4RawSocketImpl::Protocol\", StringValue (\"2\"));" );
-  lines.push_back( "InetSocketAddress dst = InetSocketAddress (addresses.GetAddress (3));" );
-  lines.push_back( "OnOffHelper onoff = OnOffHelper (\"ns3::Ipv4RawSocketFactory\", dst);" );
-  lines.push_back( "onoff.SetConstantRate (DataRate (15000));" );
-  lines.push_back( "onoff.SetAttribute (\"PacketSize\", UintegerValue (1200));" );
-  */
-
-  /*
-
-  ApplicationContainer apps = onoff.Install (c.Get (0));
-  apps.Start (Seconds (1.0));
-  apps.Stop (Seconds (10.0));
-
-  NS_LOG_INFO ("Create Sink.");
-  PacketSinkHelper sink = PacketSinkHelper ("ns3::Ipv4RawSocketFactory", dst);
-  apps = sink.Install (c.Get (3));
-  apps.Start (Seconds (0.0));
-  apps.Stop (Seconds (11.0));
-
-  NS_LOG_INFO ("Create pinger");
-  V4PingHelper ping = V4PingHelper (addresses.GetAddress (2));
-  NodeContainer pingers;
-  pingers.Add (c.Get (0));
-  pingers.Add (c.Get (1));
-  pingers.Add (c.Get (3));
-  apps = ping.Install (pingers);
-  apps.Start (Seconds (2.0));
-  apps.Stop (Seconds (5.0));
-  AddressValue remoteAddress (InetSocketAddress (ifs3.GetAddress(1, 0), PORT));
-  BulkSendHelper ftp ("ns3::TcpSocketFactory", Address());
-  ftp.SetAttribute ("Remote", remoteAddress);
-  ftp.SetAttribute ("MaxBytes",
-     UintegerValue (int(DATA_MBYTES * 1024 * 1024)));
-
-  ApplicationContainer sourceApp1 = ftp.Install (net1_nodes.Get(0));
-    sourceApp1.Start (Seconds (SIM_START+0.1));
-    sourceApp1.Stop (Seconds (SIM_STOP -0.1));
-
-  Address sinkAddress (InetSocketAddress (Ipv4Address::GetAny (), PORT));
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkAddress);
-
-    ApplicationContainer sink_apps = sinkHelper.Install (net3_nodes.Get (1));
-  sink_apps.Start (Seconds (SIM_START+0.1));
-  sink_apps.Stop (Seconds (SIM_STOP -0.1));
-  */
+  // ...
 
   /// function end
   lines.indentLeft();

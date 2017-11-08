@@ -1,11 +1,11 @@
-#include "net/NetUnit.h"
+#include "net/Network.h"
 #include "channel/Link.h"
 #include "node/Node.h"
 
 #include <iostream>
 #include "schema/Schema.hpp"
 
-NetUnit::NetUnit(const std::string& type, const std::string& name)
+Network::Network(const std::string& type, const std::string& name)
   : m_type(type), m_name(name)
 {
 }
@@ -14,13 +14,13 @@ NetUnit::NetUnit(const std::string& type, const std::string& name)
 // public:
 
 /** Add a node which is the network segment **/
-void NetUnit::AddNode(std::string name)
+void Network::AddNode(std::string name)
 {
   Node added { (int)m_nodes.size(), name };
   m_nodes[name] = added;
 }
 
-void NetUnit::ConnectChannel(std::string name, std::string node_name)
+void Network::ConnectChannel(std::string name, std::string node_name)
 {
   if ( !m_channels[name] ) {
     m_channels[name] = std::shared_ptr<Channel>(new Channel( name ));
@@ -28,38 +28,38 @@ void NetUnit::ConnectChannel(std::string name, std::string node_name)
   m_channels[name]->nodes.push_back(node_name);
 }
 
-void NetUnit::NodeConf(std::string name, std::string conf)
+void Network::NodeConf(std::string name, std::string conf)
 {
   m_nodes[name].config = conf;
 }
 
 /*
-void NetUnit::LinkConf(std::string name, std::string conf)
+void Network::LinkConf(std::string name, std::string conf)
 {
   m_channels[name]->config = conf;
 }
 */
 
-std::string NetUnit::GetName()
+std::string Network::GetName()
 {
   return m_name;
 }
 
-std::map<std::string, Node> NetUnit::GetNodes()
+std::map<std::string, Node> Network::GetNodes()
 {
   return m_nodes;
 }
 
-std::map<std::string, std::shared_ptr<Channel>> NetUnit::GetChannels()
+std::map<std::string, std::shared_ptr<Channel>> Network::GetChannels()
 {
   return m_channels;
 }
 
-void NetUnit::DumpJson()
+void Network::DumpJson()
 {
   cout << "Schema test ***" << endl;
 
-  Schema::Schema s; // net unit schema
+  Schema::Schema s; // network schema
 
   s.update("name", m_name);
 
