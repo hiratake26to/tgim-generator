@@ -5,7 +5,7 @@ SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
 
 OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
 CFLAGS  = -I./include -g
-CXXFLAGS  = -std=c++11 -I./include -g
+CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -g
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)
