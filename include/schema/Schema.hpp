@@ -11,13 +11,21 @@ using namespace std;
 namespace Schema {
 
 class SchemaValue {
-  enum { UNDEF, STRING, NUMBER } type = UNDEF;
+  enum { UNDEF, STRING, NUMBER, LIST } type = UNDEF;
 
+  std::vector<SchemaValue> list;
   std::string str;
   int num;
 
 public:
   SchemaValue() = default;
+  SchemaValue(const std::vector<std::string>& vals) : type(LIST) {
+    std::vector<SchemaValue> temp;
+    for (const auto& str : vals) {
+      temp.push_back(str);
+    }
+    list = temp;
+  }
   SchemaValue(const std::string& value) : type(STRING) {
     str = value;
   }
@@ -34,9 +42,11 @@ public:
       break;
     case NUMBER:
       break;
+    case LIST:
+      break;
     }
   }
-  std::string toString() {
+  std::string toString() const {
     std::string ret;
     switch (type) {
     case UNDEF:
@@ -47,6 +57,21 @@ public:
       break;
     case NUMBER:
       ret = std::to_string(num);
+      break;
+    case LIST:
+      stringstream ss;
+      ss << '[';
+      bool delim = false;
+      for (const auto item : list) {
+        if (delim) {
+          ss << ',';
+          delim = false;
+        }
+        ss << item.toString();
+        delim = true;
+      }
+      ss << ']';
+      ret = ss.str();
       break;
     }
 
@@ -88,7 +113,9 @@ public:
   virtual void update(std::string key_hierarchy, std::string key, std::string value) {
     at(key_hierarchy).update(key, value);
   }
-
+  virtual void update(std::string key_hierarchy, std::string key, std::vector<std::string> value) {
+    at(key_hierarchy).update(key, value);
+  }
   virtual void update(std::string key_hierarchy, std::string key, int value) {
     at(key_hierarchy).update(key, value);
   }
@@ -97,8 +124,9 @@ public:
   virtual void update(std::string key, std::string value) {
     v_tbl[key] = SchemaValue(value);
   }
-
-  /** add schema */
+  virtual void update(std::string key, std::vector<std::string> value) {
+    v_tbl[key] = SchemaValue(value);
+  }
   virtual void update(std::string key, int value) {
     v_tbl[key] = SchemaValue(value);
   }

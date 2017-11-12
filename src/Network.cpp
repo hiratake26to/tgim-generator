@@ -34,7 +34,7 @@ void Network::NodeConf(std::string name, std::string conf)
 }
 
 /*
-void Network::LinkConf(std::string name, std::string conf)
+void Network::ChannelConf(std::string name, std::string conf)
 {
   m_channels[name]->config = conf;
 }
@@ -69,11 +69,13 @@ void Network::DumpJson()
   }
   for (const auto& item : m_channels) {
     const auto& channel = item.second;
+    s.update((std::string)"channel."+channel->name, "nodes", channel->nodes ) ;
+    s.update((std::string)"channel."+channel->name, "conf", channel->config ) ;
     if (channel->GetType() == "PointToPoint") {
       Link *link = dynamic_cast<Link*>(channel.get());
-      s.update((std::string)"link."+link->name, "first", link->first ) ;
-      s.update((std::string)"link."+link->name, "second", link->second ) ;
-      s.update((std::string)"link."+link->name, "conf", link->config ) ;
+      s.update((std::string)"channel."+link->name, "first", link->first ) ;
+      s.update((std::string)"channel."+link->name, "second", link->second ) ;
+      s.update((std::string)"channel."+link->name, "conf", link->config ) ;
     } else {
       std::cout << "faild get channel!!" << std::endl;
     }

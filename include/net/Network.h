@@ -58,7 +58,7 @@ public:
   void ConnectChannel(std::string name, std::string node_name);
 
   void NodeConf(std::string name, std::string conf);
-  //void LinkConf(std::string name, std::string conf);
+  //void ChannelConf(std::string name, std::string conf);
 
   std::string GetName();
   std::map<std::string, Node> GetNodes();

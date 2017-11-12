@@ -59,7 +59,7 @@ std::vector<std::string> NetworkGenerator::CppCode() {
 
 void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   lines.push_back("/*******************************************************");
-  lines.push_back(" * section [we can always use]                         *");
+  lines.push_back(" * we can always use                                   *");
   lines.push_back(" ******************************************************/");
 
   // each node
@@ -78,7 +78,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   
   // section before build
   lines.push_back("/*******************************************************");
-  lines.push_back(" * section [config this when before build if you need] *");
+  lines.push_back(" * config this if you need before build                *");
   lines.push_back(" ******************************************************/");
 
   // channel helper
@@ -97,7 +97,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
       {
         lines.push_back("// [TGIM ERR] Channel '"
                           + ch_buf->name
-                          + "' is node count is less then 2.");
+                          + "' due to node count less then 2.");
       }
       else if ( ch_buf->nodes.size() == 2 )
       {
@@ -119,7 +119,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   
   // section after build
   lines.push_back("/*******************************************************");
-  lines.push_back(" * section [when after build, we can use this]         *");
+  lines.push_back(" * we can after build use this                         *");
   lines.push_back(" ******************************************************/");
   // all nodes
   lines.push_back("// nodes");
