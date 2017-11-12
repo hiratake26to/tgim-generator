@@ -6,6 +6,7 @@ using std::endl;
 using std::string;
 
 int main(int argc, char *argv[]) {
+  cout << "version : " << TMGR_VERSION << endl;
 
   //
   // initialization

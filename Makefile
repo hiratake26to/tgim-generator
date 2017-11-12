@@ -12,7 +12,7 @@ $(PROGRAM): $(OBJS)
 	$(CXX) -o $(PROGRAM) $^
 
 
-.PHONY: clean debug run lex yacc
+.PHONY: clean debug run lex yacc doc
 
 clean:
 	rm -f $(PROGRAM) $(OBJS)
@@ -31,3 +31,7 @@ lex: src/tmgr.l
 yacc: src/tmgr.y lex
 	yacc -d $<
 	$(CC) y.tab.c
+
+doc:
+	doxygen ./doc/Doxyfile
+

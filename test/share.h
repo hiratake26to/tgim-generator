@@ -3,6 +3,7 @@
 #include <iostream>
 #include <string>
 
+#include "version.h"
 #include "net/Network.h"
 #include "TmgrRepl.h"
 #include "ns3gen/Generator.h"

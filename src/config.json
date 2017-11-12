@@ -1,0 +1,12 @@
+{
+  "channel" : {
+    "link_0" : {
+      "DataRate" : "5Mbps",
+      "Delay" : "2ms"
+    }
+    "csma_0" : {
+      "DataRate" : "1kbps",
+      "Delay" : "1ms"
+    }
+  }
+}
