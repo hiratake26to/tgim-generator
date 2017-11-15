@@ -23,6 +23,10 @@ Author: hiratake26to@gmail.com
 
 #include <boost/range/adaptor/indexed.hpp>
 
+// parse json config
+#include <json.hpp>
+using json = nlohmann::json;
+
 NetworkGenerator::NetworkGenerator(Network net)
 {
   // nodes
@@ -88,28 +92,28 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   helper_name_map["Csma"] = "CsmaHelper";
   for (const auto& item : channels) {
     const auto& ch_buf = item.second;
-    if ( helper_name_map[ch_buf->GetType()] != "" ) {
-      lines.push_back("// Channel : " + ch_buf->name );
-      lines.push_back(helper_name_map[ch_buf->GetType()]
-                        + " " + ch_buf->name + ";");
+    if ( helper_name_map[ch_buf.type] != "" ) {
+      lines.push_back("// Channel : " + ch_buf.name );
+      lines.push_back(helper_name_map[ch_buf.type]
+                        + " " + ch_buf.name + ";");
     } else {
-      if ( ch_buf->nodes.size() < 2 )
+      if ( ch_buf.nodes.size() < 2 )
       {
         lines.push_back("// [TGIM ERR] Channel '"
-                          + ch_buf->name
+                          + ch_buf.name
                           + "' due to node count less then 2.");
       }
-      else if ( ch_buf->nodes.size() == 2 )
+      else if ( ch_buf.nodes.size() == 2 )
       {
         lines.push_back("// [TGIM AUTO]");
         lines.push_back(helper_name_map["PointToPoint"]
-                          + " " + ch_buf->name + ";");
+                          + " " + ch_buf.name + ";");
       }
-      else if ( ch_buf->nodes.size() > 2 )
+      else if ( ch_buf.nodes.size() > 2 )
       {
         lines.push_back("// [TGIM AUTO]");
         lines.push_back(helper_name_map["Csma"]
-                          + " " + ch_buf->name + ";");
+                          + " " + ch_buf.name + ";");
       }
     }
   }
@@ -127,8 +131,8 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   // netdevices
   for (const auto& item : channels) {
     const auto& channel = item.second;
-    netdevs[channel->name] = "ndc_" + channel->name;
-    lines.push_back("NetDeviceContainer " + netdevs[channel->name] + ";");
+    netdevs[channel.name] = "ndc_" + channel.name;
+    lines.push_back("NetDeviceContainer " + netdevs[channel.name] + ";");
   }
 }
 
@@ -141,7 +145,67 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   lines.push_back("void " + this->name_build_func + "() {");
   lines.indentRight();
 
+  //
+  // config channel
+  //
+
+  lines.push_back("// config channel");
+  for (const auto& item : channels) {
+    Channel ch_buf = item.second;
+
+    if (ch_buf.config.empty()) continue;
+
+    try {
+    /* begin */
+    auto j = json::parse(ch_buf.config);
+    //json jch;
+    //json jdev;
+    //j.dump(4);
+
+    if (j["type"] == "PointToPoint") {
+    }
+    else if (j["type"] == "CSMA") {
+    }
+    // set channel attribute
+    for (auto it = j.begin(); it != j.end(); ++it) {
+      //std::cout << it.key() << " : " << it.value() << std::endl;
+      std::string name = it.key();
+      std::string value = it.value();
+
+      lines.push_back(ch_buf.name
+                    + ".SetChannelAttribute(\""
+                      + name
+                    + "\","
+                      + "StringValue(\""
+                      + value
+                      + "\")"
+                    + ");");
+    }
+    // set device attribute
+    for (auto it = j.begin(); it != j.end(); ++it) {
+      //std::cout << it.key() << " : " << it.value() << std::endl;
+      std::string name = it.key();
+      std::string value = it.value();
+
+      lines.push_back(ch_buf.name
+                    + ".SetDeviceAttribute(\""
+                      + name
+                    + "\","
+                      + "StringValue(\""
+                      + value
+                      + "\")"
+                    + ");");
+    }
+
+    /* end */
+    } catch(const std::exception& e) {
+      std::cerr << __FILE__ << ":" << __LINE__ << ": " << e.what() << std::endl;
+    }
+  }
+
+  //
   // create all nodes
+  //
   lines.push_back("// create all nodes");
   lines.push_back(this->name_all_nodes
                 + ".Create("
@@ -164,77 +228,68 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   // 
   lines.push_back("// connect link");
   // -- connector generate
-  std::unordered_map<std::string, std::function<void(Channel*)>> connector;
+  std::unordered_map<std::string, std::function<void(Channel&)>> connector;
   connector["PointToPoint"]
-    = [=, &lines](Channel *channel) { 
-      Link link = *dynamic_cast<Link*>(channel);
-      lines.push_back( netdevs[link.name] + " = "
-                        + link.name + ".Install("
-                        + this->name_all_nodes + ".Get(" + link.first + ")"
+    = [=, &lines](Channel& channel) { 
+      lines.push_back( netdevs[channel.name] + " = "
+                        + channel.name + ".Install("
+                        + this->name_all_nodes + ".Get(" + channel.nodes[0] + ")"
                         + ","
-                        + this->name_all_nodes + ".Get(" + link.second + ")"
+                        + this->name_all_nodes + ".Get(" + channel.nodes[1] + ")"
                       + ");" );
     };
   connector["Csma"]
-    = [=, &lines](Channel *channel) { 
-      Csma csma = *dynamic_cast<Csma*>(channel);
+    = [=, &lines](Channel& channel) { 
       // make node container
       lines.push_back( "{" );
       lines.indentRight();
       lines.push_back( "NodeContainer nc_local;" );
       // add node
-      for (const auto& node : csma.nodes) {
+      for (const auto& node : channel.nodes) {
         lines.push_back( "nc_local.Add("
                         + this->name_all_nodes + ".Get(" + node + ")"
                         + ");" );
       }
       // connect csma
-      lines.push_back( netdevs[csma.name] + " = "
-                        + csma.name + ".Install(nc_local);" );
+      lines.push_back( netdevs[channel.name] + " = "
+                        + channel.name + ".Install(nc_local);" );
       lines.indentLeft();
       lines.push_back( "}" );
     };
   // -- connect node to channel
   for (const auto& item : channels) {
-    std::shared_ptr<Channel> ch_buf = item.second;
-    if ( connector[ch_buf->GetType()] )
+    Channel ch_buf = item.second;
+    if ( connector[ch_buf.type] )
     {
-      connector[ch_buf->GetType()](ch_buf.get());
+      connector[ch_buf.type](ch_buf);
     }
     else // auto set channel type, this will been generated latest for loop
     {
       // generate added channnel name
       std::string added_ch_name = "link_auto_"+std::to_string(channels.size());
 
-      ch_buf.reset(new Channel(*ch_buf));  // replace to copy from original
-      if ( ch_buf->nodes.size() < 2 )
+      if ( ch_buf.nodes.size() < 2 )
       {
         lines.push_back("// [TGIM ERR] Channel '"
-                          + ch_buf->name
+                          + ch_buf.name
                           + "' is node count is less then 2.");
       }
-      else if ( ch_buf->nodes.size() == 2 )
+      else if ( ch_buf.nodes.size() == 2 )
       {
-        Link *linkptr = new Link(*ch_buf);
-        linkptr->first = ch_buf->nodes[0];
-        linkptr->second = ch_buf->nodes[1];
-        ch_buf.reset(static_cast<Channel*>(linkptr));
-        auto_channels[ch_buf->name] = ch_buf;
+        auto_channels[ch_buf.name] = ch_buf;
       }
-      else if ( ch_buf->nodes.size() > 2 )
+      else if ( ch_buf.nodes.size() > 2 )
       {
-        Csma *csmaptr = new Csma(*ch_buf);
-        ch_buf.reset(static_cast<Channel*>(csmaptr));
-        auto_channels[ch_buf->name] = ch_buf;
+        auto_channels[ch_buf.name] = ch_buf;
       }
     }
   }
   for (const auto& item : auto_channels) {
-    std::shared_ptr<Channel> ch_buf = item.second;
-    if ( connector[ch_buf->GetType()] )
+    Channel ch_buf = item.second;
+    if ( connector[ch_buf.type] )
     {
       lines.push_back("// [TGIM AUTO]");
-      connector[ch_buf->GetType()](ch_buf.get());
+      connector[ch_buf.type](ch_buf);
     }
   }
 

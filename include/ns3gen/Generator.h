@@ -28,8 +28,6 @@ Author: hiratake26to@gmail.com
 #include "net/Network.h"
 #include "node/Node.h"
 #include "channel/Channel.h"
-#include "channel/Csma.h"
-#include "channel/Link.h"
 #include "CodeSecretary.h"
 
 class NetworkGenerator {
@@ -40,9 +38,9 @@ class NetworkGenerator {
   // node
   std::map<std::string, Node> nodes;
   // channel
-  std::map<std::string, std::shared_ptr<Channel>> channels;
+  std::map<std::string, Channel> channels;
   // auto_channel
-  std::map<std::string, std::shared_ptr<Channel>> auto_channels;
+  std::map<std::string, Channel> auto_channels;
 
   // netdevice (channel_name , netdev_name)
   std::map<std::string, std::string> netdevs;

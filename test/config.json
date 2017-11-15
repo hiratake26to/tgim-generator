@@ -1,0 +1,46 @@
+{
+  "channel" : {
+    "link_0" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "2ms",
+        "Address" : "192.168.1.0/24",
+        "DataRate" : "3Mbps"
+      }
+    },
+    "csma_0" : {
+      "type" : "CSMA",
+      "config" : {
+        "DataRate" : "1kbps",
+        "Delay" : "1ms",
+        "Address" : "192.168.2.0/24"
+      }
+    }
+  },
+
+  "node" : {
+    "router_l1_R_c0" : {
+      "netifs" : [
+        { "connect" : "link_0", "config": {"Address": "192.168.1.1"} },
+        { "connect" : "csma_0", "config": {"Address": "auto"} }
+      ]
+    },
+    "node_l0" : {
+      "netifs" : [
+        { "connect" : "link_0", "config": {"Address": "192.168.1.2"} }
+      ],
+      "apps" : [
+        { "load" : "./app/sink", "args" : "--recv any" }
+      ]
+    },
+    "nodes_c1_c3" : {
+      "count" : 3,
+      "netifs" : [
+        { "connect" : "csma_0", "config": {"Address": "auto"} }
+      ],
+      "apps" : [
+        { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
+      ]
+    }
+  }
+}

@@ -41,7 +41,7 @@ class Network {
   int link_tbl_id;
 
   std::map<std::string, Node> m_nodes;
-  std::map<std::string, std::shared_ptr<Channel>> m_channels;
+  std::map<std::string, Channel> m_channels;
 
 public:
   /** Constructor **/
@@ -53,18 +53,20 @@ public:
 public:
   /** Add node to network **/
   void AddNode(std::string name);
+  void AddChannel(std::string name, std::string type, std::string config);
 
   /** Add a link from node to node **/
   void ConnectChannel(std::string name, std::string node_name);
 
-  void NodeConf(std::string name, std::string conf);
-  //void ChannelConf(std::string name, std::string conf);
+  void NodeConfig(std::string name, std::string conf);
+  void ChannelConfig(std::string name, std::string conf);
 
   std::string GetName();
   std::map<std::string, Node> GetNodes();
-  std::map<std::string, std::shared_ptr<Channel>> GetChannels();
+  std::map<std::string, Channel> GetChannels();
 
   /** dump format JSON */
   void DumpJson();
+  operator std::string() const;
 };
 

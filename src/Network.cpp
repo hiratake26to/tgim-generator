@@ -1,5 +1,5 @@
 #include "net/Network.h"
-#include "channel/Link.h"
+#include "channel/Channel.h"
 #include "node/Node.h"
 
 #include <iostream>
@@ -20,25 +20,26 @@ void Network::AddNode(std::string name)
   m_nodes[name] = added;
 }
 
-void Network::ConnectChannel(std::string name, std::string node_name)
+void Network::AddChannel(std::string name, std::string type, std::string config)
 {
-  if ( !m_channels[name] ) {
-    m_channels[name] = std::shared_ptr<Channel>(new Channel( name ));
-  }
-  m_channels[name]->nodes.push_back(node_name);
+  Channel added { name, type, config };
+  m_channels[name] = added;
 }
 
-void Network::NodeConf(std::string name, std::string conf)
+void Network::ConnectChannel(std::string ch_name, std::string node_name)
 {
+  if (m_nodes[node_name].name != node_name) throw std::logic_error("not exist node has name of " + node_name);
+  if (m_channels[ch_name].name != ch_name) {
+    AddChannel(ch_name, "UNDEFINED", "");
+  }
+  m_channels[ch_name].nodes.push_back(node_name);
+}
+
+void Network::NodeConfig(std::string name, std::string conf)
+{
+  if (m_nodes[name].name != name) throw std::logic_error("node has not name");
   m_nodes[name].config = conf;
 }
-
-/*
-void Network::ChannelConf(std::string name, std::string conf)
-{
-  m_channels[name]->config = conf;
-}
-*/
 
 std::string Network::GetName()
 {
@@ -50,7 +51,7 @@ std::map<std::string, Node> Network::GetNodes()
   return m_nodes;
 }
 
-std::map<std::string, std::shared_ptr<Channel>> Network::GetChannels()
+std::map<std::string, Channel> Network::GetChannels()
 {
   return m_channels;
 }
@@ -69,20 +70,16 @@ void Network::DumpJson()
   }
   for (const auto& item : m_channels) {
     const auto& channel = item.second;
-    s.update((std::string)"channel."+channel->name, "nodes", channel->nodes ) ;
-    s.update((std::string)"channel."+channel->name, "conf", channel->config ) ;
-    if (channel->GetType() == "PointToPoint") {
-      Link *link = dynamic_cast<Link*>(channel.get());
-      s.update((std::string)"channel."+link->name, "first", link->first ) ;
-      s.update((std::string)"channel."+link->name, "second", link->second ) ;
-      s.update((std::string)"channel."+link->name, "conf", link->config ) ;
-    } else {
-      std::cout << "faild get channel!!" << std::endl;
-    }
-
+    s.update((std::string)"channel."+channel.name, "nodes", channel.nodes ) ;
+    s.update((std::string)"channel."+channel.name, "conf", channel.config ) ;
   }
 
   cout << s.toString() << endl;
 
   cout << "***" << endl;
+}
+
+Network::operator std::string() const
+{
+  return m_name;
 }

@@ -24,15 +24,9 @@ Author: hiratake26to@gmail.com
 #include "network-prvt.h"
 
 struct Channel {
-  std::string name = "ChNameDefault";
+  std::string name;
+  std::string type;
   std::string config;
   std::vector<std::string> nodes;
-  virtual std::string GetType() {
-    return "UNDEFINED";
-  };
-
-  Channel() = default;
-  Channel(std::string name, std::string config = "") : name(name), config(config) { }
-
 };
 

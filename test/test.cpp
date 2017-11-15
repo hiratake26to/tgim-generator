@@ -3,51 +3,88 @@
 #include <boost/algorithm/string.hpp>
 
 #include <json.hpp>
+#include <fstream>
 using json = nlohmann::json;
+
+class NetworkLoader {
+  json loadJson(std::string filename) {
+    std::ifstream ifs(filename);
+    json j;
+    ifs >> j;
+    ifs.close();
+    return j;
+  }
+public:
+  Network load(std::string filename) {
+    cout << "Load from \"" << filename << "\"" << endl;
+    Network net("basic", "net_xxxx");
+
+    auto j = loadJson(filename);
+
+    cout << "load channel" << endl;
+    { /* load ch */
+    json jch = j["channel"];
+    for (auto it = jch.begin(); it != jch.end(); ++it) {
+      cout << it.key() << " : " << it.value() << endl;
+      net.AddChannel(it.key(), it.value()["type"], it.value()["config"].dump());
+    }
+    } /* load ch */
+
+    cout << "load node" << endl;
+    { /* load node */
+    json jnode = j["node"];
+    for (auto it = jnode.begin(); it != jnode.end(); ++it) {
+      cout << it.key() << " : " << it.value() << endl;
+      net.AddNode(it.key());
+      // connect
+      for (auto netif : it.value()["netifs"]) {
+        net.ConnectChannel(netif["connect"], it.key());
+      }
+    }
+    } /* load node */
+    
+    cout << "Finish!" << endl;
+    return net;
+  }
+};
 
 void eval_test() {
 
-  // create an empty structure (null)
+#if 1
+  NetworkLoader loader;
+  Network net = loader.load("./test/config.json");
+  net.DumpJson();
+  NetworkGenerator gen(net);
+  for (auto line : gen.CppCode()) {
+    cout << line << endl;
+  }
+#endif
+
+//#define NLOHMANN_JSON_TEST
+#ifdef NLOHMANN_JSON_TEST
+  std::ifstream ifs("./test/config.json");
+  std::string line;
+  while (getline(ifs, line)) {
+    std::cout << line << std::endl;
+  }
+  ifs.clear();
+  ifs.seekg(0, ios_base::beg);
+
   json j;
+  
+  ifs >> j;
 
-  // add a number that is stored as double (note the implicit conversion of j to an object)
-  j["pi"] = 3.141;
+  j.dump(4);
 
-  // add a Boolean that is stored as bool
-  j["happy"] = true;
+  //cout << j["channel"] << endl;
+  json j2 = j["channel"];
+  for (auto it = j2.begin(); it != j2.end(); ++it) {
+    cout << "--" << endl;
+    cout << it.key() << " : " << it.value() << endl;
+  }
+#endif
 
-  // add a string that is stored as std::string
-  j["name"] = "Niels";
-
-  // add another null object by passing nullptr
-  j["nothing"] = nullptr;
-
-  // add an object inside the object
-  j["answer"]["everything"] = 42;
-
-  // add an array that is stored as std::vector (using an initializer list)
-  j["list"] = { 1, 0, 2 };
-
-  // add another object (using an initializer list of pairs)
-  j["object"] = { {"currency", "USD"}, {"value", 42.99} };
-
-  // instead, you could also write (which looks very similar to the JSON above)
-  json j2 = {
-    {"pi", 3.141},
-    {"happy", true},
-    {"name", "Niels"},
-    {"nothing", nullptr},
-    {"answer", {
-      {"everything", 42}
-    }},
-    {"list", {1, 0, 2}},
-    {"object", {
-      {"currency", "USD"},
-      {"value", 42.99}
-    }}
-  };
-  cout << j2.dump() << endl;
-
+//#define TMGR_NETTSET
 #ifdef TMGR_NETTSET
   //using namespace boost::algorithm;
 
@@ -70,7 +107,24 @@ void eval_test() {
 
   net.ConnectChannel("link_1", "node_4");
 
-  //net.at("link_0").config = "{\"delay\":\"100ms\", \"rate\":\"64kbps\"}";
+  net.ChannelConfig("link_0", R"(
+    {
+      "DataRate" : "5Mbps",
+      "Delay" : "2ms"
+    }
+  )");
+  net.ChannelConfig("link_1", R"(
+    {
+      "DataRate" : "5Mbps",
+      "Delay" : "2ms"
+    }
+  )");
+  net.ChannelConfig("csma_0", R"(
+    {
+      "DataRate" : "5Mbps",
+      "Delay" : "2ms"
+    }
+  )");
   // Wireless Channel 
   //net.Channel("ch_0").create;
   //net.Channel("ch_0").append("node_0");
@@ -84,10 +138,13 @@ void eval_test() {
 
   // ---
 
+  std::ofstream ofs((std::string)net + ".dump.hpp");
   NetworkGenerator gen(net);
   for (auto line : gen.CppCode()) {
     cout << line << endl;
+    ofs << line << endl;
   }
+  ofs.close();
 #endif
 
 }

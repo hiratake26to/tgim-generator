@@ -1,0 +1,42 @@
+[channel.link_0]
+  type = "PointToPoint"
+  Delay = "2ms"
+  Addresss = "192.168.1.0/24"
+  DataRate = "3Mbps"
+  #TxQueue = "..."
+  #InterframeGap = "..."
+  #Rx = "..."
+  #Drop = "..."
+
+[channel.csma_0]
+  type = "auto"
+  #type = "CSMA"
+  DataRate = "1kbps"
+  Delay = "1ms"
+  Address = "192.168.1.0/24"
+
+[node.router_l1-R-c0]
+  [[node.router_l1-R-c0.netifs]]
+  connect = "link_0"
+  Address = "192.168.1.1"
+  [[node.router_l1-R-c0.netifs]]
+  connect = "csma_0"
+  Address = "auto"
+
+[node.node_l0]
+  [[node.node_l0.netifs]]
+  connect = "link_0"
+  Address = "192.168.1.2"
+  [[node.node_l0.apps]]
+  load = "./apps/sink"
+  args = "--recv any"
+
+[node."node_c1...c3"]
+  count = 3
+  [[node."node_c1...c3".netifs]]
+  connect = "link_0"
+  Address = "192.168.1.1"
+  [[node."node_c1...c3".apps]]
+  #load = "tgim://ping?dst=192.168.1.2"
+  load = "./apps/ping"
+  args = "--dst 192.168.1.2"
