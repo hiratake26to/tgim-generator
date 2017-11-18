@@ -38,6 +38,11 @@ NetworkGenerator::NetworkGenerator(Network net)
 }
 
 std::vector<std::string> NetworkGenerator::CppCode() {
+  std::ifstream ifs("./resource/ns3template-cxx.json");
+  ns3template.clear();
+  ifs >> ns3template;
+  ifs.close();
+
   CodeSecretary lines;
 
   // namespace begin
@@ -137,7 +142,18 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
 }
 
 void NetworkGenerator::gen_build(CodeSecretary& lines) {
+  // make config table
+  // config_at["channel"] = {"Delay", "DataRate"}
+  std::map<std::string, std::vector<std::string>> config_at;
+  for (auto it = ns3template.begin(); it != ns3template.end(); ++it) {
+    for (auto at = it.value()["at"].begin(); at != it.value()["at"].end(); ++at) {
+      config_at[at.key()].push_back(it.key());
+    }
+  }
+
+  //
   // function begin
+  //
   lines.push_back("");
   lines.push_back("/*******************************************************");
   lines.push_back(" * build function                                      *");
@@ -148,53 +164,83 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   // config channel
   //
+  std::cout << "***CONFIG CHANNEL***" << std::endl;
 
+  /*
+  "Delay" : {
+    "default" : "1ms",
+    "at" : {
+      "channel" : {
+        "PointToPoint" : "SetChannelAttribute",
+        "Csma" : "SetChannelAttribute"
+      }
+    }
+  }
+   */
   lines.push_back("// config channel");
   for (const auto& item : channels) {
-    Channel ch_buf = item.second;
-
-    if (ch_buf.config.empty()) continue;
+    Channel ch = item.second;
 
     try {
     /* begin */
-    auto j = json::parse(ch_buf.config);
-    //json jch;
-    //json jdev;
-    //j.dump(4);
+    auto jconf = json::parse(ch.config);
 
-    if (j["type"] == "PointToPoint") {
-    }
-    else if (j["type"] == "CSMA") {
-    }
-    // set channel attribute
-    for (auto it = j.begin(); it != j.end(); ++it) {
-      //std::cout << it.key() << " : " << it.value() << std::endl;
-      std::string name = it.key();
-      std::string value = it.value();
+    // config at channel
+    for (auto attr : config_at["channel"])
+    {
+#if 0
+      // prototype 1
+      json jparam = ns3template[attr]["at"]["channel"][ch.type];
+      if ( jparam.empty() || !jparam.is_string() ) continue;
 
-      lines.push_back(ch_buf.name
-                    + ".SetChannelAttribute(\""
-                      + name
+      std::string name_method = jparam.get<std::string>();
+
+      std::string value = ns3template[attr]["default"];
+      // rewrite if `channel.<name>.config` has `attr`
+      if ( jconf[attr].is_string() ) {
+        value = jconf[attr].get<std::string>();
+      }
+      lines.push_back( ch.name
+                    + "." + name_method
+                    + "(\""
+                      + attr
                     + "\","
-                      + "StringValue(\""
-                      + value
-                      + "\")"
+                      + "StringValue(\"" + value + "\")"
                     + ");");
-    }
-    // set device attribute
-    for (auto it = j.begin(); it != j.end(); ++it) {
-      //std::cout << it.key() << " : " << it.value() << std::endl;
-      std::string name = it.key();
-      std::string value = it.value();
+#else
+      // prototype 2
+      // find helper method
+      json jhelper_method = ns3template["helper"] [ch.type];
+      for (auto jmethod_attr = jhelper_method.begin()
+          ; jmethod_attr != jhelper_method.end()
+          ; ++jmethod_attr)
+      {
+        // declare variable for function params
+        std::string name_method;
+        std::string attr;
+        std::string value = "empty";
+        name_method = jmethod_attr.key(); // set method
+        // find attr from attributes list
+        json jattr_list = ns3template["attributes"]
+                                [jmethod_attr.value().get<std::string>()];
+        // set each attr
+        for (auto jattr = jattr_list.begin()
+            ; jattr != jattr_list.end()
+            ; ++jattr)
+        {
+          attr = jattr.key(); // set attr
+          // generate line
+          lines.push_back( ch.name
+                        + "." + name_method
+                        + "(\""
+                          + attr
+                        + "\","
+                          + "StringValue(\"" + value + "\")"
+                        + ");");
+        }
+      }
 
-      lines.push_back(ch_buf.name
-                    + ".SetDeviceAttribute(\""
-                      + name
-                    + "\","
-                      + "StringValue(\""
-                      + value
-                      + "\")"
-                    + ");");
+#endif
     }
 
     /* end */
@@ -206,6 +252,8 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   // create all nodes
   //
+  std::cout << "***CREATE ALL NODES***" << std::endl;
+
   lines.push_back("// create all nodes");
   lines.push_back(this->name_all_nodes
                 + ".Create("
@@ -226,6 +274,8 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   // connect nodes via link
   // 
+  std::cout << "***CONNECT LINK***" << std::endl;
+
   lines.push_back("// connect link");
   // -- connector generate
   std::unordered_map<std::string, std::function<void(Channel&)>> connector;
@@ -308,6 +358,8 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   // assign IP address
   //
+  std::cout << "***ASSIGN IP***" << std::endl;
+
   lines.push_back("// ");
   lines.push_back("NS_LOG_INFO (\"Assign ip addresses.\");");
   /* // assign ip addresses
@@ -339,9 +391,10 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   // routing
   // 
+  std::cout << "***ROUTING***" << std::endl;
+
   lines.push_back( "NS_LOG_INFO (\"Initialize Global Routing.\");" );
   lines.push_back( "Ipv4GlobalRoutingHelper::PopulateRoutingTables ();" );
-
   
   //
   // applications

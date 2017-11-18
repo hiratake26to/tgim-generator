@@ -9,7 +9,7 @@
       }
     },
     "csma_0" : {
-      "type" : "CSMA",
+      "type" : "Csma",
       "config" : {
         "DataRate" : "1kbps",
         "Delay" : "1ms",

@@ -1,0 +1,69 @@
+{
+  "helper" : {
+    "PointToPoint" : {
+      "SetChannelAttribute" : "ns3::PointToPointChannel",
+      "SetDeviceAttribute" : "ns3::PointToPointNetDevice"
+    },
+    "Csma" : {
+      "SetChannelAttribute" : "ns3::CsmaChannel",
+      "SetDeviceAttribute" : "ns3::CsmaNetDevice"
+    }
+  },
+  "attributes" : {
+    "ns3::PointToPointNetDevice" : {
+      "Address" : {},
+      "Mtu" : {},
+      "DataRate" : {},
+      "ReceiveErrorModel" : {},
+      "InterframeGap" : {},
+      "TxQueue" : {}
+    },
+    "ns3::PointToPointChannel" : {
+      "Delay" : {}
+    },
+    "ns3::CsmaNetDevice" : {
+      "Address" : {},
+      "Mtu" : {},
+      "EncapsulationMode" : {},
+      "SendEnable" : {},
+      "ReceiveEnable" : {},
+      "ReceiveErrorModel" : {},
+      "TxQueue" : {}
+    },
+    "ns3::CsmaChannel" : {
+      "DataRate" : {},
+      "Delay" : {}
+    }
+  },
+
+
+  "Delay" : {
+    "default" : "1ms",
+    "at" : {
+      "channel" : {
+        "PointToPoint" : "SetChannelAttribute",
+        "Csma" : "SetChannelAttribute"
+      }
+    }
+  },
+  "DataRate" : {
+    "default" : "100Mbps",
+    "at" : {
+      "channel" : {
+        "PointToPoint" : "SetDeviceAttribute",
+        "Csma" : "SetChannelAttribute"
+      }
+    }
+  },
+
+  "Address" : {
+    "default" : "192.168.1.0",
+    "at" : {
+      "channel" : {
+        "PointToPoint" : {},
+        "CSMA" : {}
+      },
+      "node" : { }
+    }
+  }
+}

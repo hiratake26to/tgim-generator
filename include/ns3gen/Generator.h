@@ -30,6 +30,10 @@ Author: hiratake26to@gmail.com
 #include "channel/Channel.h"
 #include "CodeSecretary.h"
 
+#include <json.hpp>
+#include <fstream>
+using json = nlohmann::json;
+
 class NetworkGenerator {
   // names
   std::string name;
@@ -44,6 +48,8 @@ class NetworkGenerator {
 
   // netdevice (channel_name , netdev_name)
   std::map<std::string, std::string> netdevs;
+
+  json ns3template;
 
 public:
   /**
