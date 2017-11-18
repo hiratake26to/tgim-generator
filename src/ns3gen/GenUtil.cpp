@@ -24,7 +24,7 @@ namespace Address {
   struct address_with_mask
     : pegtl::seq<local, one<','>, mask> {};
   struct grammer
-    : pegtl::sor<cidr, address_with_mask> {};
+    : pegtl::sor<pegtl::seq<cidr,eof>, pegtl::seq<address_with_mask,eof>> {};
 
   const char *cidr_mask_tbl[] = {
     "000.000.000.000",
@@ -71,7 +71,7 @@ namespace Address {
   struct action< local >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask)
+    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
     {
       local = in.string();
     }
@@ -81,7 +81,7 @@ namespace Address {
   struct action< mask_cidr >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask)
+    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
     {
       int n = std::stol(in.string());
       if (n > 32 || n < 0) {
@@ -96,19 +96,19 @@ namespace Address {
   struct action< mask >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask)
+    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
     {
       mask = in.string();
     }
   };
 
   template<>
-  struct action< address_with_mask >
+  struct action< grammer >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask)
+    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
     {
-      //
+      ok = true;
     }
   };
 }
@@ -120,19 +120,23 @@ namespace Address {
 void AddressValue::parse_and_set(const std::string& value) {
   std::string local;
   std::string mask;
+  bool ok = false;
   {
     std::string buff;
     pegtl::string_input<> in(value, buff);
-    pegtl::parse< Address::grammer, Address::action>( in, local, mask );
+    pegtl::parse< Address::grammer, Address::action>( in, local, mask, ok );
   }
 
+  /*
   std::cout << "local : " << local << std::endl;
   std::cout << "mask : " << mask << std::endl;
+  std::cout << "ok : " << ok << std::endl;
+  */
 
   m_local = local;
   m_mask = mask;
 
-  if (local.empty() || mask.empty()) {
+  if (!ok) {
     std::cerr << "Value: " << value << std::endl;
     const char* msg
       = "Wrong Address format, it must be \"<Local>,<Mask>\" or \"<CIDR format>\"";
