@@ -11,24 +11,24 @@
   },
   "attributes" : {
     "ns3::PointToPointNetDevice" : {
-      "Address" : {},
-      "Mtu" : {},
+      "#Address" : {},
+      "#Mtu" : {},
       "DataRate" : {},
-      "ReceiveErrorModel" : {},
-      "InterframeGap" : {},
-      "TxQueue" : {}
+      "#ReceiveErrorModel" : {},
+      "#InterframeGap" : {},
+      "#TxQueue" : {}
     },
     "ns3::PointToPointChannel" : {
       "Delay" : {}
     },
     "ns3::CsmaNetDevice" : {
-      "Address" : {},
-      "Mtu" : {},
-      "EncapsulationMode" : {},
-      "SendEnable" : {},
-      "ReceiveEnable" : {},
-      "ReceiveErrorModel" : {},
-      "TxQueue" : {}
+      "#Address" : {},
+      "#Mtu" : {},
+      "#EncapsulationMode" : {},
+      "#SendEnable" : {},
+      "#ReceiveEnable" : {},
+      "#ReceiveErrorModel" : {},
+      "#TxQueue" : {}
     },
     "ns3::CsmaChannel" : {
       "DataRate" : {},

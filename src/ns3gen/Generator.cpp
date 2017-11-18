@@ -22,6 +22,7 @@ Author: hiratake26to@gmail.com
 #include "ns3gen/Generator.h"
 
 #include <boost/range/adaptor/indexed.hpp>
+#include <boost/algorithm/string.hpp>
 
 // parse json config
 #include <json.hpp>
@@ -166,17 +167,6 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   std::cout << "***CONFIG CHANNEL***" << std::endl;
 
-  /*
-  "Delay" : {
-    "default" : "1ms",
-    "at" : {
-      "channel" : {
-        "PointToPoint" : "SetChannelAttribute",
-        "Csma" : "SetChannelAttribute"
-      }
-    }
-  }
-   */
   lines.push_back("// config channel");
   for (const auto& item : channels) {
     Channel ch = item.second;
@@ -187,39 +177,20 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
 
     // config at channel
     for (auto attr : config_at["channel"])
-    {
-#if 0
-      // prototype 1
-      json jparam = ns3template[attr]["at"]["channel"][ch.type];
-      if ( jparam.empty() || !jparam.is_string() ) continue;
-
-      std::string name_method = jparam.get<std::string>();
-
-      std::string value = ns3template[attr]["default"];
-      // rewrite if `channel.<name>.config` has `attr`
-      if ( jconf[attr].is_string() ) {
-        value = jconf[attr].get<std::string>();
-      }
-      lines.push_back( ch.name
-                    + "." + name_method
-                    + "(\""
-                      + attr
-                    + "\","
-                      + "StringValue(\"" + value + "\")"
-                    + ");");
-#else
+    { // ** for begin **
       // prototype 2
       // find helper method
       json jhelper_method = ns3template["helper"] [ch.type];
+      std::cout << jhelper_method.dump(2) << std::endl;
       for (auto jmethod_attr = jhelper_method.begin()
           ; jmethod_attr != jhelper_method.end()
           ; ++jmethod_attr)
       {
         // declare variable for function params
-        std::string name_method;
-        std::string attr;
-        std::string value = "empty";
-        name_method = jmethod_attr.key(); // set method
+        std::string method;
+        std::string value;
+        // set method
+        method = jmethod_attr.key();
         // find attr from attributes list
         json jattr_list = ns3template["attributes"]
                                 [jmethod_attr.value().get<std::string>()];
@@ -228,10 +199,12 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
             ; jattr != jattr_list.end()
             ; ++jattr)
         {
-          attr = jattr.key(); // set attr
+          if (attr != jattr.key()) continue;
+          // set value
+          value = jconf[attr];
           // generate line
           lines.push_back( ch.name
-                        + "." + name_method
+                        + "." + method
                         + "(\""
                           + attr
                         + "\","
@@ -239,9 +212,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
                         + ");");
         }
       }
-
-#endif
-    }
+    } // ** for end **
 
     /* end */
     } catch(const std::exception& e) {
