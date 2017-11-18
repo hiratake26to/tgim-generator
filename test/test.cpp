@@ -48,8 +48,9 @@ public:
   }
 };
 
-void eval_test() {
+#include "ns3gen/GenUtil.h"
 
+void eval_test() {
 #if 1
   NetworkLoader loader;
   Network net = loader.load("./test/config.json");

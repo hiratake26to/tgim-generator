@@ -5,7 +5,7 @@ SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
 
 OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
 CFLAGS  = -I./include -g
-CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -g
+CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -I./thirdparty/PEGTL-2.2.0/include -g
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)

@@ -20,6 +20,7 @@ Author: hiratake26to@gmail.com
  */
 
 #include "ns3gen/Generator.h"
+#include "ns3gen/GenUtil.h"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/string.hpp>
@@ -340,17 +341,23 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
    * Ipv4InterfaceContainer addresses = ip.Assign (devs); */
   lines.push_back("{ Ipv4AddressHelper ip;");
   lines.indentRight();
-  for (const auto& elem : netdevs | boost::adaptors::indexed()) {
-    const auto& nd = elem.value().second;
-    const auto& i = std::to_string(elem.index() + 1);
+  for (const auto& item : channels) {
+    Channel ch = item.second;
+
+    std::string nd = netdevs[ch.name];
     lines.push_back("// " + nd);
-    std::string base_ip = "192.168." + i + ".0";
-    std::string base_subnet = "255.255.255.0";
+    json jconf;
+    jconf = json::parse(ch.config);
+    std::vector<std::string> splited;
+    std::string str_addr = jconf["Address"].get<std::string>();
+    AddressValue addr(str_addr);
+    std::string base_ip = addr.GetLocal();
+    std::string base_mask = addr.GetMask();
     // set base
     lines.push_back( (std::string)"ip.SetBase ("
                       + "\"" + base_ip + "\""
                       + ","
-                      + "\"" + base_subnet + "\""
+                      + "\"" + base_mask + "\""
                       + ");" );
     // ip assign
     //lines.push_back ( "Ipv4InterfaceContainer addresses = ip.Assign (" + nd + ");" );
