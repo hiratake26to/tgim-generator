@@ -10,13 +10,13 @@ namespace Address {
   using namespace tao::pegtl;
 
   struct octet
-    : pegtl::plus<pegtl::digit> {};
+    : pegtl::rep_min_max<1, 3, pegtl::digit> {};
   struct dot
     : pegtl::one<'.'> {};
   struct local
     : pegtl::seq<octet, dot, octet, dot, octet, dot, octet> {};
   struct mask_cidr
-    : pegtl::plus<pegtl::digit> {};
+    : pegtl::rep_min_max<1, 2, pegtl::digit> {};
   struct cidr
     : pegtl::seq<local, one<'/'>, mask_cidr> {};
   struct mask
@@ -85,7 +85,8 @@ namespace Address {
     {
       int n = std::stol(in.string());
       if (n > 32 || n < 0) {
-        mask = "255.255.255.255";
+        //mask = "255.255.255.255";
+        throw std::runtime_error("Invalid mask number: " + in.string() + ", CIDR");
       } else {
         mask = cidr_mask_tbl[n];
       }
@@ -121,10 +122,19 @@ void AddressValue::parse_and_set(const std::string& value) {
   std::string local;
   std::string mask;
   bool ok = false;
-  {
+  try {
     std::string buff;
     pegtl::string_input<> in(value, buff);
     pegtl::parse< Address::grammer, Address::action>( in, local, mask, ok );
+    if (!ok) throw std::runtime_error("not ok");
+
+  } catch(const std::exception& e) {
+    std::cerr << "Exception in parse address: \"" << value << "\"" << std::endl;
+    std::cerr << "what: " << e.what() << std::endl;
+    const char* msg
+      = "Wrong Address format, it must be \"<Local>,<Mask>\" or \"<CIDR format>\"";
+    std::cerr << __FILE__ << ":" << __LINE__ << ":" << msg << std::endl;
+    throw std::runtime_error(msg);
   }
 
   /*
@@ -135,14 +145,6 @@ void AddressValue::parse_and_set(const std::string& value) {
 
   m_local = local;
   m_mask = mask;
-
-  if (!ok) {
-    std::cerr << "Value: " << value << std::endl;
-    const char* msg
-      = "Wrong Address format, it must be \"<Local>,<Mask>\" or \"<CIDR format>\"";
-    std::cerr << __FILE__ << ":" << __LINE__ << msg << std::endl;
-    throw std::logic_error(msg);
-  }
 }
 
 AddressValue::AddressValue(const std::string& value) {
