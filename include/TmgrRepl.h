@@ -68,7 +68,7 @@ private:
   }
 
   Res addNode() {
-    net->AddNode("node");
+    net->AddNode("node", "");
     return SUCCESS;
   }
 

@@ -21,26 +21,26 @@
   "node" : {
     "router_l1_R_c0" : {
       "netifs" : [
-        { "connect" : "link_0", "config": {"Address": "192.168.1.1"} },
+        { "connect" : "link_0", "config": {"Address": "0.0.0.1"} },
         { "connect" : "csma_0", "config": {"Address": "auto"} }
       ]
     },
     "node_l0" : {
       "netifs" : [
-        { "connect" : "link_0", "config": {"Address": "192.168.1.2"} }
+        { "connect" : "link_0", "config": {"Address": "0.0.0.2"} }
       ],
       "apps" : [
         { "load" : "./app/sink", "args" : "--recv any" }
       ]
     },
     "nodes_c1_c3" : {
-      "count" : 3,
       "netifs" : [
         { "connect" : "csma_0", "config": {"Address": "auto"} }
       ],
       "apps" : [
         { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
-      ]
+      ],
+      "config" : { "count" : 3 }
     }
   }
 }

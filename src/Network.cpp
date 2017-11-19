@@ -14,9 +14,9 @@ Network::Network(const std::string& type, const std::string& name)
 // public:
 
 /** Add a node which is the network segment **/
-void Network::AddNode(std::string name)
+void Network::AddNode(std::string name, std::string config)
 {
-  Node added { (int)m_nodes.size(), name };
+  Node added { (int)m_nodes.size(), name, config };
   m_nodes[name] = added;
 }
 

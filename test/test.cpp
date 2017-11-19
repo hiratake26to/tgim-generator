@@ -35,7 +35,12 @@ public:
     json jnode = j["node"];
     for (auto it = jnode.begin(); it != jnode.end(); ++it) {
       cout << it.key() << " : " << it.value() << endl;
-      net.AddNode(it.key());
+      // get config
+      std::string conf;
+      if (!it.value()["config"].empty()) {
+        conf = it.value()["config"].dump();
+      }
+      net.AddNode(it.key(), conf);
       // connect
       for (auto netif : it.value()["netifs"]) {
         net.ConnectChannel(netif["connect"], it.key());

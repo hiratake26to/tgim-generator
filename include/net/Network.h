@@ -52,7 +52,7 @@ public:
 
 public:
   /** Add node to network **/
-  void AddNode(std::string name);
+  void AddNode(std::string name, std::string config);
   void AddChannel(std::string name, std::string type, std::string config);
 
   /** Add a link from node to node **/
