@@ -1,0 +1,76 @@
+{
+  "name" : "ts",
+  "channel" : {
+    "link_0" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.10.0/24",
+        "DataRate" : "100Mbps"
+      }
+    },
+    "link_1" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.11.0/24",
+        "DataRate" : "100Mbps"
+      }
+    },
+    "link_2" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.12.0/24",
+        "DataRate" : "100Mbps"
+      }
+    },
+    "link_3" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.13.0/24",
+        "DataRate" : "100Mbps"
+      }
+    }
+  },
+
+  "subnet" : {
+    "transit" : {
+      "load" : "./local/transit-net.json",
+      "netifs" : [
+        { "up" : "router_0", "connect" : "link_0", "config": {"Address": "auto"} },
+        { "up" : "router_1", "connect" : "link_1", "config": {"Address": "auto"} },
+        { "up" : "router_2", "connect" : "link_2", "config": {"Address": "auto"} }
+      ]
+    },
+    "stub_0" : {
+      "load" : "./local/stub-net1.json",
+      "netifs" : [
+        { "up" : "gateway", "connect" : "link_0", "config": {"Address": "auto"} },
+        { "up" : "gateway", "connect" : "link_3", "config": {"Address": "auto"} },
+        { "up" : "node_0" },
+        { "up" : "node_1" },
+        { "up" : "node_2" }
+      ]
+    },
+    "stub_1" : {
+      "load" : "./local/stub-net2.json",
+      "netifs" : [
+        { "up" : "gateway", "connect" : "link_1", "config": {"Address": "auto"} },
+        { "up" : "node_0" },
+        { "up" : "node_1" },
+        { "up" : "node_2" }
+      ]
+    },
+    "ex_0" : {
+      "load" : "./local/example.json",
+      "netifs" : [
+        { "up" : "sinker", "connect" : "link_2", "config": {"Address": "auto"} },
+        { "up" : "pinger_0", "config": {"Address": "auto"} },
+        { "up" : "pinger_1", "config": {"Address": "auto"} },
+        { "up" : "pinger_2", "config": {"Address": "auto"} }
+      ]
+    }
+  }
+}

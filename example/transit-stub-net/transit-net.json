@@ -1,0 +1,50 @@
+{
+  "name" : "transit",
+  "channel" : {
+    "link_0" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.21.0/24",
+        "DataRate" : "100Mbps"
+      }
+    },
+    "link_1" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.22.0/24",
+        "DataRate" : "100Mbps"
+      }
+    },
+    "link_2" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.23.0/24",
+        "DataRate" : "100Mbps"
+      }
+    }
+  },
+
+  "node" : {
+    "router_0" : {
+      "netifs" : [
+        { "connect" : "link_0", "config": {"Address": "auto"} },
+        { "connect" : "link_1", "config": {"Address": "auto"} }
+      ]
+    },
+    "router_1" : {
+      "netifs" : [
+        { "connect" : "link_1", "config": {"Address": "auto"} },
+        { "connect" : "link_2", "config": {"Address": "auto"} }
+      ]
+    },
+    "router_2" : {
+      "netifs" : [
+        { "connect" : "link_2", "config": {"Address": "auto"} },
+        { "connect" : "link_0", "config": {"Address": "auto"} }
+      ]
+    }
+  }
+}

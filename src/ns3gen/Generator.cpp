@@ -33,13 +33,17 @@ NetworkGenerator::NetworkGenerator(Network net)
 {
   // nodes
   this->nodes = net.GetNodes();
+  // subnets
+  this->subnets = net.GetSubnets();
   // channels
   this->channels = net.GetChannels();
   // name
   this->name = net.GetName();
+  // type
+  this->net_type = net.GetType();
 }
 
-std::vector<std::string> NetworkGenerator::CppCode() {
+std::vector<std::string> NetworkGenerator::CppCode(std::string out_filename) {
   std::ifstream ifs("./resource/ns3template-cxx.json");
   ns3template.clear();
   ifs >> ns3template;
@@ -65,6 +69,12 @@ std::vector<std::string> NetworkGenerator::CppCode() {
   // namespace end
   lines.push_back("}");
 
+  std::ofstream ofs("./out/"+out_filename+".hpp");
+  for (auto line : lines.get()) {
+    ofs << line << std::endl;
+  }
+  ofs.close();
+
   return lines.get(); 
 }
 
@@ -73,7 +83,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   lines.push_back(" * we can always use                                   *");
   lines.push_back(" ******************************************************/");
 
-  // each node
+  // generate enum for node
   lines.push_back("// enum node name");
   lines.push_back("enum NodeName {");
   lines.indentRight();
@@ -123,6 +133,14 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
                           + " " + ch_buf.name + ";");
       }
     }
+  }
+
+  // subnet
+  lines.push_back("// subnet");
+  for (const auto& item : subnets) {
+    const auto& name = item.first;
+    const auto& subnet = item.second;
+    lines.push_back("struct " + subnet.GetName() + " " + name + ";" );
   }
 
   // %%
@@ -222,15 +240,34 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   }
 
   //
+  // generate all subnet
+  //
+  std::cout << "***BUILD ALL SUBNETS***" << std::endl;
+
+  lines.push_back("// build all subnets");
+  for (const auto& item : subnets) {
+    const auto& name = item.first;
+    lines.push_back(name + ".build();" );
+  }
+
+  //
   // create all nodes
   //
   std::cout << "***CREATE ALL NODES***" << std::endl;
 
   lines.push_back("// create all nodes");
-  lines.push_back(this->name_all_nodes
-                + ".Create("
-                + std::to_string(this->nodes.size())
-                + ");");
+  for (const auto& item : nodes) {
+    const auto& node = item.second;
+    std::string added = "CreateObject<Node>()";
+    if ( node.type == NODE_T_IFACE ) {
+      added = node.subnet_name + ".nodes.Get("+node.subnet_class+"::"+node.subnet_node_id+")";
+    }
+    lines.push_back("// - " + node.name);
+    lines.push_back(this->name_all_nodes
+                  + ".Add("
+                  + added
+                  + ");");
+  }
 
   // name each node
   /*
@@ -253,6 +290,11 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   std::unordered_map<std::string, std::function<void(Channel&)>> connector;
   connector["PointToPoint"]
     = [=, &lines](Channel& channel) { 
+			if (channel.nodes.size() < 2) {
+				lines.push_back( "// " + netdevs[channel.name]
+																+ ": not connected due to node count less than 2" );
+				return;
+			}
       lines.push_back( netdevs[channel.name] + " = "
                         + channel.name + ".Install("
                         + this->name_all_nodes + ".Get(" + channel.nodes[0] + ")"
@@ -322,6 +364,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   lines.push_back("InternetStackHelper stack;");
   for (const auto& item : nodes) {
     const auto& node = item.second;
+    if (node.type == NODE_T_IFACE) continue; // already installed in subnet build
     lines.push_back("stack.Install("
                       + this->name_all_nodes + ".Get(" + node.name + ")"
                       + ");" );
@@ -347,8 +390,16 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     std::string nd = netdevs[ch.name];
     lines.push_back("// " + nd);
     json jconf;
+    if (ch.config.empty()) {
+			lines.push_back("// config is empty");
+      continue;
+		}
     jconf = json::parse(ch.config);
     std::vector<std::string> splited;
+    if (!jconf["Address"].is_string()) {
+			lines.push_back("// not set address");
+      continue;
+    }
     std::string str_addr = jconf["Address"].get<std::string>();
     AddressValue addr(str_addr);
     std::string base_ip = addr.GetLocal();
@@ -370,9 +421,9 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   // routing
   // 
   std::cout << "***ROUTING***" << std::endl;
-
   lines.push_back( "NS_LOG_INFO (\"Initialize Global Routing.\");" );
   lines.push_back( "Ipv4GlobalRoutingHelper::PopulateRoutingTables ();" );
+  lines.push_back( "Ipv4GlobalRoutingHelper::RecomputeRoutingTables ();" );
   
   //
   // applications

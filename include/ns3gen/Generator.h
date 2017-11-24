@@ -39,8 +39,12 @@ class NetworkGenerator {
   std::string name;
   std::string name_build_func = "build";
   std::string name_all_nodes = "nodes";
+  // type
+  int net_type;
   // node
   std::map<std::string, Node> nodes;
+  // subnet
+  std::map<std::string, Network> subnets;
   // channel
   std::map<std::string, Channel> channels;
   // auto_channel
@@ -59,7 +63,7 @@ public:
   /**
    * @brief generate NS3 C++ code
    */
-  std::vector<std::string> CppCode();
+  std::vector<std::string> CppCode(std::string out_filename);
 
 private:
   /** variable declare */

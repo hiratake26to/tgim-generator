@@ -47,7 +47,7 @@ public:
 
 public:
   Repl() {
-    net = new Network("type", "net_0");
+    net = new Network(Network::NET_T_BASIC, "net_0");
   }
   ~Repl() {
     delete net;

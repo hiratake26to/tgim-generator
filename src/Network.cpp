@@ -5,10 +5,13 @@
 #include <iostream>
 #include "schema/Schema.hpp"
 
-Network::Network(const std::string& type, const std::string& name)
+Network::Network()
+  : m_type(NET_T_NONE), m_name("")
+{ }
+
+Network::Network(NetType_t type, const std::string& name)
   : m_type(type), m_name(name)
-{
-}
+{ }
 
 
 // public:
@@ -18,6 +21,12 @@ void Network::AddNode(std::string name, std::string config)
 {
   Node added { (int)m_nodes.size(), name, config };
   m_nodes[name] = added;
+}
+
+void Network::AddSubnet(std::string name, const Network& subnet)
+{
+  if ( m_type != NET_T_WNET ) m_type = NET_T_WNET; // change type to NET_T_WNET
+  m_subnets[name] = subnet;
 }
 
 void Network::AddChannel(std::string name, std::string type, std::string config)
@@ -35,20 +44,48 @@ void Network::ConnectChannel(std::string ch_name, std::string node_name)
   m_channels[ch_name].nodes.push_back(node_name);
 }
 
+std::string Network::UpIface(std::string subnet_name, std::string iface_name)
+{
+  if (m_subnets[subnet_name].GetType() == NET_T_NONE) {
+    throw std::runtime_error(m_name + " is has not subnet '" + subnet_name + "'");
+  }
+  std::map<std::string, Node> sub_n = m_subnets[subnet_name].GetNodes();
+  if (sub_n[iface_name].name != iface_name) {
+    throw std::runtime_error("node is not defined in " + subnet_name);
+  }
+  std::string name_with_prefix = subnet_name+"_"+sub_n[iface_name].name;
+  AddNode(name_with_prefix, sub_n[iface_name].config);
+  m_nodes[name_with_prefix].type = NODE_T_IFACE;
+  m_nodes[name_with_prefix].subnet_name = subnet_name;
+  m_nodes[name_with_prefix].subnet_class = m_subnets[subnet_name].GetName();
+  m_nodes[name_with_prefix].subnet_node_id = sub_n[iface_name].name;
+  return name_with_prefix;
+}
+
 void Network::NodeConfig(std::string name, std::string conf)
 {
   if (m_nodes[name].name != name) throw std::logic_error("node has not name");
   m_nodes[name].config = conf;
 }
 
-std::string Network::GetName()
+std::string Network::GetName() const
 {
   return m_name;
+}
+
+int Network::GetType() const
+{
+  return m_type;
 }
 
 std::map<std::string, Node> Network::GetNodes()
 {
   return m_nodes;
+}
+
+std::map<std::string, Network> Network::GetSubnets()
+{
+  return m_subnets;
 }
 
 std::map<std::string, Channel> Network::GetChannels()

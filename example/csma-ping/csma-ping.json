@@ -1,10 +1,11 @@
 {
+  "name" : "example",
   "channel" : {
     "link_0" : {
       "type" : "PointToPoint",
       "config" : {
         "Delay" : "2ms",
-        "Address" : "192.168.1.0,255.255.255.000",
+        "Address" : "192.168.1.0/24",
         "DataRate" : "3Mbps"
       }
     },
@@ -19,13 +20,13 @@
   },
 
   "node" : {
-    "router_l1_R_c0" : {
+    "router" : {
       "netifs" : [
         { "connect" : "link_0", "config": {"Address": "0.0.0.1"} },
         { "connect" : "csma_0", "config": {"Address": "auto"} }
       ]
     },
-    "node_l0" : {
+    "sinker" : {
       "netifs" : [
         { "connect" : "link_0", "config": {"Address": "0.0.0.2"} }
       ],
@@ -33,7 +34,7 @@
         { "load" : "./app/sink", "args" : "--recv any" }
       ]
     },
-    "nodes_c1_c3" : {
+    "pinger_goal" : {
       "netifs" : [
         { "connect" : "csma_0", "config": {"Address": "auto"} }
       ],
@@ -41,6 +42,30 @@
         { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
       ],
       "config" : { "count" : 3 }
+    },
+    "pinger_0" : {
+      "netifs" : [
+        { "connect" : "csma_0", "config": {"Address": "auto"} }
+      ],
+      "apps" : [
+        { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
+      ]
+    },
+    "pinger_1" : {
+      "netifs" : [
+        { "connect" : "csma_0", "config": {"Address": "auto"} }
+      ],
+      "apps" : [
+        { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
+      ]
+    },
+    "pinger_2" : {
+      "netifs" : [
+        { "connect" : "csma_0", "config": {"Address": "auto"} }
+      ],
+      "apps" : [
+        { "load" : "./app/ping", "args" : "--dst 192.168.1.2" }
+      ]
     }
   }
 }

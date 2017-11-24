@@ -1,67 +1,12 @@
 #include "share.h"
 
-#include <boost/algorithm/string.hpp>
-
-#include <json.hpp>
-#include <fstream>
-using json = nlohmann::json;
-
-class NetworkLoader {
-  json loadJson(std::string filename) {
-    std::ifstream ifs(filename);
-    json j;
-    ifs >> j;
-    ifs.close();
-    return j;
-  }
-public:
-  Network load(std::string filename) {
-    cout << "Load from \"" << filename << "\"" << endl;
-    Network net("basic", "net_xxxx");
-
-    auto j = loadJson(filename);
-
-    cout << "load channel" << endl;
-    { /* load ch */
-    json jch = j["channel"];
-    for (auto it = jch.begin(); it != jch.end(); ++it) {
-      cout << it.key() << " : " << it.value() << endl;
-      net.AddChannel(it.key(), it.value()["type"], it.value()["config"].dump());
-    }
-    } /* load ch */
-
-    cout << "load node" << endl;
-    { /* load node */
-    json jnode = j["node"];
-    for (auto it = jnode.begin(); it != jnode.end(); ++it) {
-      cout << it.key() << " : " << it.value() << endl;
-      // get config
-      std::string conf;
-      if (!it.value()["config"].empty()) {
-        conf = it.value()["config"].dump();
-      }
-      net.AddNode(it.key(), conf);
-      // connect
-      for (auto netif : it.value()["netifs"]) {
-        net.ConnectChannel(netif["connect"], it.key());
-      }
-    }
-    } /* load node */
-    
-    cout << "Finish!" << endl;
-    return net;
-  }
-};
-
-#include "ns3gen/GenUtil.h"
-
 void eval_test() {
 #if 1
   NetworkLoader loader;
   Network net = loader.load("./test/config.json");
   net.DumpJson();
   NetworkGenerator gen(net);
-  for (auto line : gen.CppCode()) {
+  for (auto line : gen.CppCode("test")) {
     cout << line << endl;
   }
 #endif
