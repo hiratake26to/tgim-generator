@@ -14,13 +14,12 @@ Author: hiratake26to@gmail.com
 
 /**
  * \file Generator.cpp
- * \brief NS3 Code generate unit
  * \author hiratake26to@gmail
  * \date 2017
  */
 
-#include "ns3gen/Generator.h"
-#include "ns3gen/GenUtil.h"
+#include "ns3gen/Generator.hpp"
+#include "ns3gen/GenUtil.hpp"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/string.hpp>

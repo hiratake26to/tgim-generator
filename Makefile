@@ -1,4 +1,4 @@
-PROGRAM = a.out
+PROGRAM = tgim-ns3
 
 SRC_DIR = ./src/ ./src/ns3gen/ ./test/
 SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
@@ -30,7 +30,7 @@ doc:
 	doxygen ./doc/Doxyfile
 
 gen: $(JSRC_LIST)
-	./init.sh
+	./init.sh;:
 	./$(PROGRAM) --input-file $^
 
 gen-debug: $(JSRC_LIST)

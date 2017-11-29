@@ -3,12 +3,12 @@
 #include <iostream>
 #include <string>
 
-#include "net/Network.h"
-#include "NetworkLoader.h"
-#include "ns3gen/Generator.h"
+#include "net/Network.hpp"
+#include "loader/NetworkLoader.hpp"
+#include "ns3gen/Generator.hpp"
 #include "schema/Schema.hpp"
-#include "TmgrRepl.h"
-#include "version.h"
+#include "TmgrRepl.hpp"
+#include "version.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/join.hpp>

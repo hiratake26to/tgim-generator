@@ -1,4 +1,4 @@
-#include "NetworkLoader.h"
+#include "loader/NetworkLoader.hpp"
 
 #include <json.hpp>
 #include <fstream>

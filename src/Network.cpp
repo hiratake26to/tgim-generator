@@ -1,6 +1,6 @@
-#include "net/Network.h"
-#include "channel/Channel.h"
-#include "node/Node.h"
+#include "net/Network.hpp"
+#include "net/Channel.hpp"
+#include "net/Node.hpp"
 
 #include <iostream>
 #include "schema/Schema.hpp"
@@ -95,7 +95,7 @@ std::map<std::string, Channel> Network::GetChannels()
 
 void Network::DumpJson()
 {
-  cout << "Schema test ***" << endl;
+  std::cout << "Schema test ***" << std::endl;
 
   Schema::Schema s; // network schema
 
@@ -111,9 +111,9 @@ void Network::DumpJson()
     s.update((std::string)"channel."+channel.name, "conf", channel.config ) ;
   }
 
-  cout << s.toString() << endl;
+  std::cout << s.toString() << std::endl;
 
-  cout << "***" << endl;
+  std::cout << "***" << std::endl;
 }
 
 Network::operator std::string() const
