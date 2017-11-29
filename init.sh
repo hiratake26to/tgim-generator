@@ -1,0 +1,2 @@
+mkdir local
+mkdir out

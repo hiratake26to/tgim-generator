@@ -1,4 +1,6 @@
 doc/html
+local
+out
 *.o
 a.out
 node_modules

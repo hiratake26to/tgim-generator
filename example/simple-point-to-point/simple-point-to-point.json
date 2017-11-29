@@ -1,5 +1,5 @@
 {
-  "name" : "addr_test",
+  "name" : "SimplePointToPoint",
   "channel" : {
     "link_0" : {
       "type" : "PointToPoint",

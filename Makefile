@@ -17,28 +17,21 @@ $(PROGRAM): $(OBJS)
 	$(CXX) -o $(PROGRAM) $^ -lboost_program_options -lboost_filesystem -lboost_system
 
 
-.PHONY: clean debug run lex yacc doc gen
+.PHONY: clean debug doc gen gen-debug
 
 clean:
 	rm -f $(PROGRAM) $(OBJS)
 
-run:
+debug:
 	make;
 	./$(PROGRAM) --debug
-
-lex: src/tmgr.l
-	yacc -d src/tmgr.y
-	flex $<
-
-yacc: src/tmgr.y lex
-	yacc -d $<
-	$(CC) y.tab.c
 
 doc:
 	doxygen ./doc/Doxyfile
 
 gen: $(JSRC_LIST)
+	./init.sh
 	./$(PROGRAM) --input-file $^
 
-debug: $(JSRC_LIST)
+gen-debug: $(JSRC_LIST)
 	cgdb --args ./$(PROGRAM) --input-file $^
