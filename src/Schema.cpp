@@ -14,7 +14,6 @@ Author: hiratake26to@gmail.com
 
 /**
  * \file Schema.cpp
- * \brief Network attribute schema.
  * \author hiratake26to@gmail
  * \date 2017
  */
