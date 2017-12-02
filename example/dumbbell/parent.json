@@ -1,0 +1,28 @@
+{
+  "name" : "ParentNet",
+  "channel" : {
+    "link_0" : {
+      "type" : "PointToPoint",
+      "config" : {
+        "Delay" : "1ms",
+        "Address" : "192.168.3.0/24",
+        "DataRate" : "100Mbps"
+      }
+    }
+  },
+
+  "subnet" : {
+    "subnet_0" : {
+      "load" : "./local/subnet0.json",
+      "netifs" : [
+        { "up" : "gateway", "connect" : "link_0" }
+      ]
+    },
+    "subnet_1" : {
+      "load" : "./local/subnet1.json",
+      "netifs" : [
+        { "up" : "gateway", "connect" : "link_0" }
+      ]
+    }
+  }
+}

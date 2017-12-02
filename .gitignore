@@ -4,3 +4,4 @@ out
 *.o
 a.out
 node_modules
+tgim-ns3
