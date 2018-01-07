@@ -134,6 +134,11 @@ namespace Address {
   };
 }
 
+namespace {
+  // netaddress : last local address
+  std::map<std::string, std::string> assign_address_list;
+}
+
 //
 // impl
 //
@@ -175,4 +180,44 @@ std::string AddressValue::GetLocal() {
 }
 std::string AddressValue::GetMask() {
   return m_mask;
+}
+
+//
+//
+//
+
+uint32_t AddressGenerator::address_net;
+uint32_t AddressGenerator::address_mask;
+uint32_t AddressGenerator::address_last;
+
+std::string AddressGenerator::toStrAddr(uint32_t addr) {
+  uint8_t oct[4];
+  // [0].[1].[2].[3]
+  oct[0] = 0xFF & (addr >> 24);
+  oct[1] = 0xFF & (addr >> 16);
+  oct[2] = 0xFF & (addr >>  8);
+  oct[3] = 0xFF & (addr);
+
+  std::string str_addr
+    = std::to_string(oct[0]) + "."
+    + std::to_string(oct[1]) + "."
+    + std::to_string(oct[2]) + "."
+    + std::to_string(oct[3]);
+
+  return str_addr;
+}
+
+void AddressGenerator::Init() {
+  address_net   = 0xC0A80000;
+  address_mask  = 0xFFFFFF00;
+  address_last  = address_net + ~address_mask + 1;
+}
+std::string AddressGenerator::GetLocal() {
+  return toStrAddr(address_last);
+}
+std::string AddressGenerator::GetMask() {
+  return toStrAddr(address_mask);
+}
+void AddressGenerator::Next() {
+  address_last  = address_last + ~address_mask + 1;
 }

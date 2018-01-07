@@ -8,25 +8,34 @@ using std::vector;
 
 #include <boost/filesystem.hpp>
 
-void generate(std::string path) {
-  namespace fs = boost::filesystem;
-
-  NetworkLoader loader;
-  Network net = loader.load(path);
-  net.DumpJson();
-  NetworkGenerator gen(net);
-
-  const fs::path p(path);
-  std::string out_name = p.stem().string();
-
-  for (auto line : gen.CppCode(out_name)) {
-    cout << line << endl;
+class GenW {
+  static std::string out_dir;
+public:
+  static void setOutDir(std::string dir) {
+    GenW::out_dir = dir;
   }
-}
+  static void generate(const std::string& path) {
+    namespace fs = boost::filesystem;
+
+    NetworkLoader loader;
+    Network net = loader.load(path);
+    //net.DumpJson();
+    NetworkGenerator gen(net);
+
+    const fs::path p(path);
+    std::string out_name = p.stem().string();
+
+    std::ofstream ofs(GenW::out_dir + out_name +".hpp");
+    for (auto line : gen.CppCode()) {
+      //cout << line << endl;
+      ofs << line << endl;
+    }
+    ofs.close();
+  }
+};
+std::string GenW::out_dir = "./out/";
 
 int main(int argc, char *argv[]) {
-  cout << "version : " << TMGR_VERSION << endl;
-
   //
   // initialization
   //
@@ -36,30 +45,44 @@ int main(int argc, char *argv[]) {
   po::options_description desc("option");
   desc.add_options()
     ("help,h", "show help")
+    ("version,v", "show version")
     ("debug", "debug mode")
-    ("input-file", po::value<vector<string>>()->multitoken(), "input file (.json)")
+    ("output-dir", po::value<string>(), "output directory (default ./out/)")
   ;
 
   po::variables_map vm;
-  po::store(po::parse_command_line(argc, argv, desc), vm);
+  auto const parsing_result = po::parse_command_line(argc, argv, desc);
+  po::store(parsing_result, vm);
   po::notify(vm);
 
   if (vm.count("help")) {
+    cout << "Usage: " << argv[0] << "[options] file..." << endl;
     cout << desc << endl;
+    return 1;
+  }
+  if (vm.count("version")) {
+    cout << "Version: " << TMGR_VERSION << endl;
     return 1;
   }
   if (vm.count("debug")) {
     eval_test();
     return 0;
   }
-  if (vm.count("input-file")) {
-    for (const auto& file : vm["input-file"].as<vector<string>>())
-    {
-      cout << file << endl;
-      generate(file);
-    }
-    return 0;
+  if (vm.count("output-dir")) {
+    // TODO: set output directory
+    const auto odir = vm["output-dir"].as<string>();
+    GenW::setOutDir(odir);
   }
+
+  // run generator
+  bool fexit = false;
+  for (auto const& file : po::collect_unrecognized(parsing_result.options, po::include_positional)) {
+    cout << "convert... " << file;
+    GenW::generate(file);
+    cout << " OK" << endl;
+    fexit = true;
+  }
+  if ( fexit ) return 0;
 
   //
   // main

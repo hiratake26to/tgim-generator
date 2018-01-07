@@ -25,6 +25,7 @@ Author: hiratake26to@gmail.com
 
 #include "Node.hpp"
 #include "Channel.hpp"
+#include "Application.hpp"
 
 /** @brief Network segment model **/
 class Network {
@@ -38,6 +39,7 @@ private:
   std::map<std::string, Node> m_nodes;
   std::map<std::string, Channel> m_channels;
   std::map<std::string, Network> m_subnets;
+  std::map<std::string, Application> m_apps;
 
 public:
   /** Constructor **/
@@ -52,6 +54,7 @@ public:
   void AddNode(std::string name, std::string config);
   void AddSubnet(std::string name, const Network& subnet);
   void AddChannel(std::string name, std::string type, std::string config);
+  void AddApp(std::string name, std::string type, std::string shost, int sport, std::string dhost, int dport, int start, int stop, std::string opt);
 
   /** Add a link from node to node **/
   void ConnectChannel(std::string ch_name, std::string node_name);
@@ -67,6 +70,7 @@ public:
   std::map<std::string, Node> GetNodes();
   std::map<std::string, Network> GetSubnets();
   std::map<std::string, Channel> GetChannels();
+  std::map<std::string, Application> GetApps();
 
   /** dump format JSON */
   void DumpJson();

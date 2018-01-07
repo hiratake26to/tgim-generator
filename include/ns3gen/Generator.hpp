@@ -28,6 +28,7 @@ Author: hiratake26to@gmail.com
 #include <vector>
 
 #include "CodeSecretary.hpp"
+#include "net/Application.hpp"
 #include "net/Channel.hpp"
 #include "net/Network.hpp"
 #include "net/Node.hpp"
@@ -39,6 +40,7 @@ class NetworkGenerator {
   // names
   std::string name;
   std::string name_build_func = "build";
+  std::string name_app_func = "app";
   std::string name_all_nodes = "nodes";
   // type
   int net_type;
@@ -48,6 +50,8 @@ class NetworkGenerator {
   std::map<std::string, Network> subnets;
   // channel
   std::map<std::string, Channel> channels;
+  // channel
+  std::map<std::string, Application> apps;
   // auto_channel
   std::map<std::string, Channel> auto_channels;
 
@@ -64,14 +68,14 @@ public:
   /**
    * @brief generate NS3 C++ code
    */
-  std::vector<std::string> CppCode(std::string out_filename);
+  std::vector<std::string> CppCode();
 
 private:
   /** variable declare */
   void gen_decl(CodeSecretary& lines);
 
   /**
-   * @brief build function
+   * @brief Generate build function
    * @details
    * - initialize variables
    * - create node
@@ -79,5 +83,10 @@ private:
    * - create link
    */
   void gen_build(CodeSecretary& lines);
+
+  /**
+   * @brief Generate application
+   */
+  void gen_app(CodeSecretary& lines);
 
 };

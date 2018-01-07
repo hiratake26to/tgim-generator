@@ -5,7 +5,6 @@
       "type" : "PointToPoint",
       "config" : {
         "Delay" : "2ms",
-        "Address" : "192.168.1.0/25",
         "DataRate" : "3Mbps"
       }
     },
@@ -13,16 +12,14 @@
       "type" : "PointToPoint",
       "config" : {
         "DataRate" : "1kbps",
-        "Delay" : "1ms",
-        "Address" : "192.168.2.0/24"
+        "Delay" : "1ms"
       }
     },
     "link_2" : {
       "type" : "PointToPoint",
       "config" : {
         "DataRate" : "1kbps",
-        "Delay" : "1ms",
-        "Address" : "192.168.1.128/25"
+        "Delay" : "1ms"
       }
     }
   },
@@ -49,6 +46,21 @@
       "netifs" : [
         { "connect" : "link_2", "config": {"Address": "auto"} }
       ]
+    }
+  },
+
+  "apps" : {
+    "tcpApp": {
+      "type": "setMyTcpApp",
+      "args": {
+        "shost": "X", 
+        "sport": 60000,
+        "dhost": "Y",
+        "dport": 80,
+        "start": 5,
+        "stop": 25,
+        "rate": "1Mbps"
+      }
     }
   }
 }

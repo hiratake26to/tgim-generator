@@ -6,7 +6,7 @@ void eval_test() {
   Network net = loader.load("./test/config.json");
   net.DumpJson();
   NetworkGenerator gen(net);
-  for (auto line : gen.CppCode("test")) {
+  for (auto line : gen.CppCode()) {
     cout << line << endl;
   }
 #endif

@@ -55,6 +55,14 @@ void Network::AddChannel(std::string name, std::string type, std::string config)
   m_channels[name] = added;
 }
 
+void Network::AddApp(std::string name, std::string type, std::string shost, int sport, std::string dhost, int dport, int start, int stop, std::string opt)
+{
+  Socket src = { shost, sport };
+  Socket dst = { dhost, dport };
+  Application added { name, type, src, dst, start, stop, opt };
+  m_apps[name] = added;
+}
+
 void Network::ConnectChannel(std::string ch_name, std::string node_name)
 {
   if (m_nodes[node_name].name != node_name) throw std::logic_error("not exist node has name of " + node_name);
@@ -111,6 +119,11 @@ std::map<std::string, Network> Network::GetSubnets()
 std::map<std::string, Channel> Network::GetChannels()
 {
   return m_channels;
+}
+
+std::map<std::string, Application> Network::GetApps()
+{
+  return m_apps;
 }
 
 void Network::DumpJson()

@@ -31,7 +31,7 @@ doc:
 
 gen: $(JSRC_LIST)
 	./init.sh;:
-	./$(PROGRAM) --input-file $^
+	./$(PROGRAM) $^
 
 gen-debug: $(JSRC_LIST)
 	cgdb --args ./$(PROGRAM) --input-file $^

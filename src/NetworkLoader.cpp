@@ -39,7 +39,7 @@ namespace {
 
 // impl
 Network NetworkLoader::load(std::string filename) {
-  cout << "Load from \"" << filename << "\"" << endl;
+  //cout << "Load from \"" << filename << "\"" << endl;
 
   std::string net_name;
   auto j = loadJson(filename);
@@ -51,20 +51,20 @@ Network NetworkLoader::load(std::string filename) {
   }
   Network net(Network::NET_T_BASIC, net_name);
 
-  cout << "***load channel***" << endl;
+  //cout << "***load channel***" << endl;
   { /* load ch */
   json jch = j["channel"];
   for (auto it = jch.begin(); it != jch.end(); ++it) {
-    cout << it.key() << " : " << it.value() << endl;
+    //cout << it.key() << " : " << it.value() << endl;
     net.AddChannel(it.key(), it.value()["type"], it.value()["config"].dump());
   }
   } /* load ch */
 
-  cout << "***load node***" << endl;
+  //cout << "***load node***" << endl;
   { /* load node */
   json jnode = j["node"];
   for (auto it = jnode.begin(); it != jnode.end(); ++it) {
-    cout << it.key() << " : " << it.value() << endl;
+    //cout << it.key() << " : " << it.value() << endl;
     // get config
     std::string conf;
     if (!it.value()["config"].empty()) {
@@ -78,12 +78,12 @@ Network NetworkLoader::load(std::string filename) {
   }
   } /* load node */
 
-  cout << "***load subnet***" << endl;
+  //cout << "***load subnet***" << endl;
   { /* load subnet */
   json jsubnet = j["subnet"];
   for (auto it = jsubnet.begin(); it != jsubnet.end(); ++it) {
     // "subnet name" : { "load" : "file", "netifs" : [ { "up" : "name" }, ... ] }
-    cout << it.key() << " : " << it.value() << endl;
+    //cout << it.key() << " : " << it.value() << endl;
     // load
     std::string fname = it.value()["load"].get<std::string>();
     NetworkLoader loader;
@@ -98,7 +98,39 @@ Network NetworkLoader::load(std::string filename) {
     }
   }
   } /* load subnet */
+
+  //cout << "***load app***" << endl;
+  { /* load app */
+  json jnode = j["apps"];
+  for (auto it = jnode.begin(); it != jnode.end(); ++it) {
+    try {
+      //std::cout << it.key() << std::endl;
+      std::string name = it.key();
+      std::string type = it.value()["type"];
+      std::string shost = it.value()["args"]["src"]["host"];
+      int sport         = it.value()["args"]["src"]["port"];
+      std::string dhost = it.value()["args"]["dst"]["host"];
+      int dport         = it.value()["args"]["dst"]["port"];
+      std::string opt   = it.value()["args"]["opt"].dump();
+      int start         = it.value()["args"]["sim"]["start"];
+      int stop          = it.value()["args"]["sim"]["stop"];
+      net.AddApp(name, type, shost, sport, dhost, dport, start, stop, opt);
+
+    } catch (std::exception& e) {
+      std::cerr << e.what() << std::endl;
+      throw std::runtime_error("Could not load of application, due to missing json format");
+    }
+  }
+#if 0 // debug
+  auto apps = net.GetApps();
+  for (auto itr : apps) {
+    std::cout << "name: " << itr.first;
+    std::cout << ", args: " << itr.second.args << std::endl;
+  }
+#endif
+  } /* load app */
+
   
-  cout << "Finish!" << endl;
+  //cout << "***LOAD FINISH!***" << endl;
   return net;
 }

@@ -13,35 +13,34 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file GenUtil.hpp
- * \brief Generator utility.
+ * \file Application.hpp
+ * \brief Network Application Model.
  * \author hiratake26to@gmail
  * \date 2017
  */
 
 #pragma once
 
-#include <string>
+#include "network-prvt.hpp"
 
-class AddressValue {
-  std::string m_local;
-  std::string m_mask;
-  void parse_and_set(const std::string& value);
-public:
-  AddressValue(const std::string& value);
-  std::string GetLocal();
-  std::string GetMask();
+struct Socket {
+  std::string host;
+  int port;
 };
-
-class AddressGenerator {
-  // 10.0.0.0 ~ 10.255.255.255
-  static uint32_t address_net;
-  static uint32_t address_mask;
-  static uint32_t address_last;
-  static std::string toStrAddr(uint32_t addr);
-public:
-  static void Init();
-  static std::string GetLocal();
-  static std::string GetMask();
-  static void Next();
+struct Application {
+  // Application name
+  std::string name;
+  // Application type (as name of generator function)
+  std::string type;
+  // source socket
+  Socket src;
+  // distination socket
+  Socket dst;
+  // start
+  struct {
+    int start;
+    int stop;
+  } sim;
+  // <"name", "value">
+  std::string option;
 };
