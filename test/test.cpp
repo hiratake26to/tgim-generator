@@ -5,7 +5,9 @@ void eval_test() {
   NetworkLoader loader;
   Network net = loader.load("./test/config.json");
   net.DumpJson();
-  NetworkGenerator gen(net);
+  TemplateLoader tloader;
+  tloader.setPath("./resource/ns3template-cxx.json");
+  NetworkGenerator gen(net, tloader);
   for (auto line : gen.CppCode()) {
     cout << line << endl;
   }

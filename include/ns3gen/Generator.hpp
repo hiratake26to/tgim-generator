@@ -32,6 +32,7 @@ Author: hiratake26to@gmail.com
 #include "net/Channel.hpp"
 #include "net/Network.hpp"
 #include "net/Node.hpp"
+#include "loader/TemplateLoader.hpp"
 
 #include <json.hpp>
 using json = nlohmann::json;
@@ -58,13 +59,15 @@ class NetworkGenerator {
   // netdevice (channel_name , netdev_name)
   std::map<std::string, std::string> netdevs;
 
+  // ns3 code template
+  TemplateLoader ns3template_loader;
   json ns3template;
 
 public:
   /**
    * @brief constructor
    */
-  NetworkGenerator(Network net);
+  NetworkGenerator(Network net, const TemplateLoader& template_loader);
   /**
    * @brief generate NS3 C++ code
    */

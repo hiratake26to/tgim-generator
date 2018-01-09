@@ -28,7 +28,7 @@ Author: hiratake26to@gmail.com
 #include <json.hpp>
 using json = nlohmann::json;
 
-NetworkGenerator::NetworkGenerator(Network net)
+NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_loader)
 {
   // nodes
   this->nodes = net.GetNodes();
@@ -43,15 +43,16 @@ NetworkGenerator::NetworkGenerator(Network net)
   // type
   this->net_type = net.GetType();
 
+  // loader
+  this->ns3template_loader = template_loader;
+
   // other init
   AddressGenerator::Init();
 }
 
 std::vector<std::string> NetworkGenerator::CppCode() {
-  std::ifstream ifs("./resource/ns3template-cxx.json");
-  ns3template.clear();
-  ifs >> ns3template;
-  ifs.close();
+  // load ns3 code template
+  ns3template = this->ns3template_loader.load();
 
   CodeSecretary lines;
 

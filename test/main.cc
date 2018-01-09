@@ -7,12 +7,23 @@ using std::string;
 using std::vector;
 
 #include <boost/filesystem.hpp>
+#include "loader/TemplateLoader.hpp"
 
 class GenW {
   static std::string out_dir;
+  static std::string codetemp_path;
 public:
   static void setOutDir(std::string dir) {
     GenW::out_dir = dir;
+  }
+  static void setTemplatePath(std::string path) {
+    GenW::codetemp_path = path;
+  }
+  static std::string getOutDir() {
+    return GenW::out_dir;
+  }
+  static std::string getTemplatePath() {
+    return GenW::codetemp_path;
   }
   static void generate(const std::string& path) {
     namespace fs = boost::filesystem;
@@ -20,7 +31,9 @@ public:
     NetworkLoader loader;
     Network net = loader.load(path);
     //net.DumpJson();
-    NetworkGenerator gen(net);
+    TemplateLoader tloader;
+    tloader.setPath(GenW::codetemp_path);
+    NetworkGenerator gen(net, tloader);
 
     const fs::path p(path);
     std::string out_name = p.stem().string();
@@ -33,7 +46,10 @@ public:
     ofs.close();
   }
 };
-std::string GenW::out_dir = "./out/";
+
+std::string GenW::out_dir;
+std::string GenW::codetemp_path;
+
 
 int main(int argc, char *argv[]) {
   //
@@ -47,7 +63,8 @@ int main(int argc, char *argv[]) {
     ("help,h", "show help")
     ("version,v", "show version")
     ("debug", "debug mode")
-    ("output-dir", po::value<string>(), "output directory (default ./out/)")
+    ("output-dir", po::value<string>(), "output directory\n(default ./out/)")
+    ("template-path", po::value<string>(), "ns3 code template path\n(default ./resource/ns3template-cxx.json)")
   ;
 
   po::variables_map vm;
@@ -56,7 +73,7 @@ int main(int argc, char *argv[]) {
   po::notify(vm);
 
   if (vm.count("help")) {
-    cout << "Usage: " << argv[0] << "[options] file..." << endl;
+    cout << "Usage: " << argv[0] << " [options] file..." << endl;
     cout << desc << endl;
     return 1;
   }
@@ -69,20 +86,32 @@ int main(int argc, char *argv[]) {
     return 0;
   }
   if (vm.count("output-dir")) {
-    // TODO: set output directory
     const auto odir = vm["output-dir"].as<string>();
     GenW::setOutDir(odir);
+  } else {
+    GenW::setOutDir("./out/");
+  }
+  if (vm.count("template-path")) {
+    const auto tpath = vm["template-path"].as<string>();
+    GenW::setTemplatePath(tpath);
+  } else {
+    GenW::setTemplatePath("./resource/ns3template-cxx.json");
   }
 
   // run generator
-  bool fexit = false;
-  for (auto const& file : po::collect_unrecognized(parsing_result.options, po::include_positional)) {
-    cout << "convert... " << file;
-    GenW::generate(file);
-    cout << " OK" << endl;
-    fexit = true;
+  if ( po::collect_unrecognized(parsing_result.options, po::include_positional).size() ) {
+    // show config
+    cout << "==> Configuration" << endl;
+    cout << "output-dir=\"" << GenW::getOutDir() << "\"" << endl;
+    cout << "template-path=\"" << GenW::getTemplatePath() << "\"" << endl;
+
+    for (auto const& file : po::collect_unrecognized(parsing_result.options, po::include_positional)) {
+      cout << "==> Convert: " << file << endl;
+      GenW::generate(file);
+      cout << "OK" << endl;
+    }
+    return 0;
   }
-  if ( fexit ) return 0;
 
   //
   // main
