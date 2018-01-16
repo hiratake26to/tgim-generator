@@ -1,0 +1,15 @@
+[
+  {
+    "name": "Ping",
+    "type": "ping",
+    "args": {
+      "shost": "src_node_name", 
+      "sport": 60000,
+      "dhost": "dst_node_name",
+      "dport": 8080,
+      "start": 1,
+      "stop": 10,
+      "rate": "1Mbps"
+    }
+  }
+]

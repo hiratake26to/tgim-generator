@@ -23,25 +23,125 @@ Author: hiratake26to@gmail.com
 
 #include "net/Application.hpp"
 
+#include "loader/AppModelLoader.hpp"
+
+#include <boost/algorithm/string/join.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
 
 // parse json config
 #include <json.hpp>
 using json = nlohmann::json;
 
+///
+#include <tao/pegtl.hpp>
+
+namespace pegtl = tao::pegtl;
+
+namespace argument {
+  using namespace tao::pegtl;
+
+  struct var_id
+    : pegtl::plus< pegtl::not_one<'}'> > {};
+  struct var_lit
+    : pegtl::seq< pegtl::one<'$'>, pegtl::one<'{'>, var_id, pegtl::one<'}'> > {};
+  struct raw
+    : pegtl::not_one<'$'> {};
+  struct content
+    : pegtl::star< pegtl::sor<raw, var_lit > > {};
+  struct grammer
+    : pegtl::seq< content, eof > {};
+
+  template< typename Rule >
+  struct action
+    : pegtl::nothing< Rule >
+  {};
+
+  template<>
+  struct action< raw >
+  {
+    template< typename Input >
+    static void apply( const Input& in, std::string& result,
+      const std::string& all_nodes,
+      const std::map<std::string, Node>& nodes )
+    {
+      result += (in.string());
+    }
+  };
+
+  template<>
+  struct action< var_id >
+  {
+    template< typename Input >
+    static void apply( const Input& in, std::string& result,
+      const std::string& all_nodes,
+      const std::map<std::string, Node>& nodes )
+    {
+      if ( nodes.count(in.string()) ) {
+        result += (all_nodes + ".Get(" + nodes.at(in.string()).name + ")");
+      } else {
+        throw std::runtime_error("not found the node of name '" + in.string() + "'");
+      }
+    }
+  };
+
+  template<>
+  struct action< grammer >
+  {
+    template< typename Input >
+    static void apply( const Input& in, std::string& result,
+      const std::string& all_nodes,
+      const std::map<std::string, Node>& nodes )
+    {
+    }
+  };
+}
 
 
 namespace {
-  std::string expandArgs(Application app, std::string all_nodes) {
-    return (
-        boost::format(R"(%1%, %2% , %3%, %4%, %5%, %6%)")
-      % (all_nodes+".Get("+app.src.host+")")
-      % app.src.port
-      % (all_nodes+".Get("+app.dst.host+")")
-      % app.dst.port
-      % app.sim.start
-      % app.sim.stop
-      ).str();
+  std::string resolveHolder(
+      const std::string& str,
+      const std::string& all_nodes,
+      const std::map<std::string, Node>& nodes
+  ){
+    std::string ret;
+    std::string buff;
+    pegtl::string_input<> in(str, buff);
+    pegtl::parse< argument::grammer, argument::action>( in, ret, all_nodes, nodes );
+    if (ret != str) {
+      boost::trim_if (ret, boost::is_any_of("\"") );
+    }
+    return ret;
+  }
+  void expandParams(
+      CodeSecretary& lines,
+      const std::string& instance_name,
+      const Application& app,
+      const std::string& all_nodes,
+      const std::map<std::string, Node>& nodes
+  ){
+    // load application model
+    AppModelLoader loader;
+    loader.setPath("./src/model/application.json");
+    auto loaded = loader.load();
+
+    json jargs;
+    for (auto& elem : loaded) {
+      // search
+      if (elem["type"] == app.type) {
+        jargs = elem["args"];
+        break;
+      }
+    }
+
+    for (auto it = jargs.begin(); it != jargs.end(); ++it) {
+      //std::cout << app.args[it.key()] << std::endl;
+      lines.push_back( (boost::format(R"(%1%.Set_%2%(%3%);)")
+            % instance_name
+            % it.key()
+            % resolveHolder( app.args.at(it.key()), all_nodes, nodes ) // TODO: impl, generator replace literals.
+            ).str() );
+    }
   }
 }
 
@@ -62,7 +162,14 @@ setMyTcpApp(Ptr<Node> n, int nport, Ptr<Node> m, int mport, int sim_start, int s
   for (const auto& item : apps) {
     const auto& app = item.second;
     // `app.name` is not used, it is only used for identify app
-    lines.push_back( "tgim::app::" + app.type + "(" + expandArgs(app , name_all_nodes) + ");" );
+    lines.push_back("{");
+    lines.indentRight();
+      std::string instance_name = "__tgim_app_" + app.type;
+      lines.push_back( "tgim::app::" + app.type + " " + instance_name + ";");
+      expandParams(lines, instance_name, app , name_all_nodes, nodes);
+      lines.push_back( instance_name + ".install();" );
+    lines.indentLeft();
+    lines.push_back("}");
   }
 
 #if 0

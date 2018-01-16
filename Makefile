@@ -34,4 +34,4 @@ gen: $(JSRC_LIST)
 	./$(PROGRAM) $^
 
 gen-debug: $(JSRC_LIST)
-	cgdb --args ./$(PROGRAM) --input-file $^
+	cgdb --args ./$(PROGRAM) $^

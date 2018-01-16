@@ -23,24 +23,11 @@ Author: hiratake26to@gmail.com
 
 #include "network-prvt.hpp"
 
-struct Socket {
-  std::string host;
-  int port;
-};
 struct Application {
   // Application name
   std::string name;
   // Application type (as name of generator function)
   std::string type;
-  // source socket
-  Socket src;
-  // distination socket
-  Socket dst;
-  // start
-  struct {
-    int start;
-    int stop;
-  } sim;
   // <"name", "value">
-  std::string option;
+  std::map<std::string, std::string> args;
 };

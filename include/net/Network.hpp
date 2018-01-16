@@ -54,7 +54,7 @@ public:
   void AddNode(std::string name, std::string config);
   void AddSubnet(std::string name, const Network& subnet);
   void AddChannel(std::string name, std::string type, std::string config);
-  void AddApp(std::string name, std::string type, std::string shost, int sport, std::string dhost, int dport, int start, int stop, std::string opt);
+  void AddApp(std::string name, std::string type, const std::map<std::string, std::string>& args);
 
   /** Add a link from node to node **/
   void ConnectChannel(std::string ch_name, std::string node_name);

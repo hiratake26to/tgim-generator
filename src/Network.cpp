@@ -55,11 +55,9 @@ void Network::AddChannel(std::string name, std::string type, std::string config)
   m_channels[name] = added;
 }
 
-void Network::AddApp(std::string name, std::string type, std::string shost, int sport, std::string dhost, int dport, int start, int stop, std::string opt)
+void Network::AddApp(std::string name, std::string type, const std::map<std::string, std::string>& args)
 {
-  Socket src = { shost, sport };
-  Socket dst = { dhost, dport };
-  Application added { name, type, src, dst, start, stop, opt };
+  Application added { name, type, args };
   m_apps[name] = added;
 }
 

@@ -107,14 +107,14 @@ Network NetworkLoader::load(std::string filename) {
       //std::cout << it.key() << std::endl;
       std::string name = it.key();
       std::string type = it.value()["type"];
-      std::string shost = it.value()["args"]["src"]["host"];
-      int sport         = it.value()["args"]["src"]["port"];
-      std::string dhost = it.value()["args"]["dst"]["host"];
-      int dport         = it.value()["args"]["dst"]["port"];
-      std::string opt   = it.value()["args"]["opt"].dump();
-      int start         = it.value()["args"]["sim"]["start"];
-      int stop          = it.value()["args"]["sim"]["stop"];
-      net.AddApp(name, type, shost, sport, dhost, dport, start, stop, opt);
+      auto jargs = it.value()["args"];
+      std::map<std::string, std::string> args;
+      for (auto it = jargs.begin(); it != jargs.end(); ++it) {
+        //std::cout << "arg load: " << it.key() << ":" << it.value().dump() << std::endl;
+        args[it.key()] = it.value().dump();
+      }
+
+      net.AddApp(name, type, args);
 
     } catch (std::exception& e) {
       std::cerr << e.what() << std::endl;
