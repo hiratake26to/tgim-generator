@@ -115,14 +115,13 @@ namespace {
   }
   void expandParams(
       CodeSecretary& lines,
+      const AppModelLoader& loader,
       const std::string& instance_name,
       const Application& app,
       const std::string& all_nodes,
       const std::map<std::string, Node>& nodes
   ){
     // load application model
-    AppModelLoader loader;
-    loader.setPath("./src/model/application.json");
     auto loaded = loader.load();
 
     json jargs;
@@ -166,7 +165,7 @@ setMyTcpApp(Ptr<Node> n, int nport, Ptr<Node> m, int mport, int sim_start, int s
     lines.indentRight();
       std::string instance_name = "__tgim_app_" + app.type;
       lines.push_back( "tgim::app::" + app.type + " " + instance_name + ";");
-      expandParams(lines, instance_name, app , name_all_nodes, nodes);
+      expandParams(lines, this->ns3appmodel_loader, instance_name, app , name_all_nodes, nodes);
       lines.push_back( instance_name + ".install();" );
     lines.indentLeft();
     lines.push_back("}");

@@ -10,35 +10,39 @@ using std::vector;
 #include "loader/TemplateLoader.hpp"
 
 class GenW {
-  static std::string out_dir;
+  static std::string output;
   static std::string codetemp_path;
+  static std::string appmodel_path;
 public:
-  static void setOutDir(std::string dir) {
-    GenW::out_dir = dir;
+  static void setOutput(std::string name) {
+    GenW::output = name;
   }
   static void setTemplatePath(std::string path) {
     GenW::codetemp_path = path;
   }
-  static std::string getOutDir() {
-    return GenW::out_dir;
+  static void setAppModelPath(std::string path) {
+    GenW::appmodel_path = path;
+  }
+  static std::string getOutput() {
+    return GenW::output;
   }
   static std::string getTemplatePath() {
     return GenW::codetemp_path;
   }
+  static std::string getAppModelPath() {
+    return GenW::appmodel_path;
+  }
   static void generate(const std::string& path) {
-    namespace fs = boost::filesystem;
-
     NetworkLoader loader;
     Network net = loader.load(path);
     //net.DumpJson();
     TemplateLoader tloader;
+    AppModelLoader aloader;
     tloader.setPath(GenW::codetemp_path);
-    NetworkGenerator gen(net, tloader);
+    aloader.setPath(GenW::appmodel_path);
+    NetworkGenerator gen(net, tloader, aloader);
 
-    const fs::path p(path);
-    std::string out_name = p.stem().string();
-
-    std::ofstream ofs(GenW::out_dir + out_name +".hpp");
+    std::ofstream ofs(GenW::output);
     for (auto line : gen.CppCode()) {
       //cout << line << endl;
       ofs << line << endl;
@@ -47,8 +51,9 @@ public:
   }
 };
 
-std::string GenW::out_dir;
+std::string GenW::output;
 std::string GenW::codetemp_path;
+std::string GenW::appmodel_path;
 
 
 int main(int argc, char *argv[]) {
@@ -60,11 +65,12 @@ int main(int argc, char *argv[]) {
   namespace po = boost::program_options;
   po::options_description desc("option");
   desc.add_options()
-    ("help,h", "show help")
+    ("help,h",    "show help")
     ("version,v", "show version")
+    ("output,o",      po::value<string>()->value_name("<file>"), "place the output into <file>")
+    ("appmodel-path", po::value<string>()->value_name("<path>"), "ns3 application model path\n(default ./src/model/application.json)")
+    ("template-path", po::value<string>()->value_name("<path>"), "ns3 code template path\n(default ./resource/ns3template-cxx.json)")
     ("debug", "debug mode")
-    ("output-dir", po::value<string>(), "output directory\n(default ./out/)")
-    ("template-path", po::value<string>(), "ns3 code template path\n(default ./resource/ns3template-cxx.json)")
   ;
 
   po::variables_map vm;
@@ -85,11 +91,11 @@ int main(int argc, char *argv[]) {
     eval_test();
     return 0;
   }
-  if (vm.count("output-dir")) {
-    const auto odir = vm["output-dir"].as<string>();
-    GenW::setOutDir(odir);
+  if (vm.count("output")) {
+    const auto odir = vm["output"].as<string>();
+    GenW::setOutput(odir);
   } else {
-    GenW::setOutDir("./out/");
+    GenW::setOutput("");
   }
   if (vm.count("template-path")) {
     const auto tpath = vm["template-path"].as<string>();
@@ -97,19 +103,38 @@ int main(int argc, char *argv[]) {
   } else {
     GenW::setTemplatePath("./resource/ns3template-cxx.json");
   }
+  if (vm.count("appmodel-path")) {
+    const auto apath = vm["appmodel-path"].as<string>();
+    GenW::setAppModelPath(apath);
+  } else {
+    GenW::setAppModelPath("./src/model/application.json");
+  }
 
   // run generator
   if ( po::collect_unrecognized(parsing_result.options, po::include_positional).size() ) {
+    if (po::collect_unrecognized(parsing_result.options, po::include_positional).size() != 1) {
+      std::cerr << "file argument error!" << endl;
+      return 1;
+    }
+
+    std::string file = po::collect_unrecognized(parsing_result.options, po::include_positional).at(0);
+    namespace fs = boost::filesystem;
+    const fs::path p(file);
+    if (GenW::getOutput() == "") {
+      auto o = p.stem().string() + ".hpp";
+      GenW::setOutput(o);
+    }
+
     // show config
     cout << "==> Configuration" << endl;
-    cout << "output-dir=\"" << GenW::getOutDir() << "\"" << endl;
+    cout << "output=\"" << GenW::getOutput() << "\"" << endl;
     cout << "template-path=\"" << GenW::getTemplatePath() << "\"" << endl;
+    cout << "appmodel-path=\"" << GenW::getAppModelPath() << "\"" << endl;
 
-    for (auto const& file : po::collect_unrecognized(parsing_result.options, po::include_positional)) {
-      cout << "==> Convert: " << file << endl;
-      GenW::generate(file);
-      cout << "OK" << endl;
-    }
+    cout << "==> Convert: " << file << endl;
+    GenW::generate(file);
+    cout << "OK" << endl;
+
     return 0;
   }
 

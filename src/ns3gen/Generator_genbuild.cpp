@@ -57,6 +57,9 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   for (const auto& item : channels) {
     Channel ch = item.second;
 
+    if ( ch.config == "") {
+      std::cerr << "WARNING: chennel config is empty in \"" << ch.name  << "\"" << std::endl;
+    }
     try {
     /* begin */
     auto jconf = json::parse(ch.config);

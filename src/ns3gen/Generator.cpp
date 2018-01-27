@@ -28,7 +28,7 @@ Author: hiratake26to@gmail.com
 #include <json.hpp>
 using json = nlohmann::json;
 
-NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_loader)
+NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_loader, const AppModelLoader& appmodel_loader)
 {
   // nodes
   this->nodes = net.GetNodes();
@@ -45,6 +45,7 @@ NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_l
 
   // loader
   this->ns3template_loader = template_loader;
+  this->ns3appmodel_loader = appmodel_loader;
 
   // other init
   AddressGenerator::Init();

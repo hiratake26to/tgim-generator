@@ -11,7 +11,7 @@ public:
   void setPath(std::string path) {
     load_path = path;
   }
-  json load() {
+  json load() const {
     json ret;
     std::ifstream ifs(load_path);
     ifs >> ret;
