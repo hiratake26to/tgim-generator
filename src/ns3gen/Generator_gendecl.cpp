@@ -29,10 +29,6 @@ Author: hiratake26to@gmail.com
 using json = nlohmann::json;
 
 void NetworkGenerator::gen_decl(CodeSecretary& lines) {
-  lines.push_back("/*******************************************************");
-  lines.push_back(" * we can always use                                   *");
-  lines.push_back(" ******************************************************/");
-
   // generate enum for node
   lines.push_back("// enum node name");
   lines.push_back("enum NodeName {");
