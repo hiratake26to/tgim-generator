@@ -1,4 +1,4 @@
-PROGRAM = tgim-generator
+PROGRAM = ./bin/tgim-generator
 
 SRC_DIR = ./src/ ./src/ns3gen/ ./test/
 SOURCES = $(wildcard $(addsuffix *.cpp,$(SRC_DIR)))
@@ -14,7 +14,8 @@ CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -I./thirdparty/PEGTL-2
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)
-	$(CXX) -o ./bin/$(PROGRAM) $^ -lboost_program_options -lboost_filesystem -lboost_system
+	mkdir -p ./bin
+	$(CXX) -o $(PROGRAM) $^ -lboost_program_options -lboost_filesystem -lboost_system
 
 
 .PHONY: clean debug doc gen gen-debug
