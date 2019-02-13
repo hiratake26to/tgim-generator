@@ -33,7 +33,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   lines.push_back("// enum node name");
   lines.push_back("enum NodeName {");
   lines.indentRight();
-  for (const auto& item : nodes) {
+  for (const auto& item : m_nodes) {
     const auto& node = item.second;
     lines.push_back("" + node.name + ",");
   }
@@ -53,13 +53,17 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   std::unordered_map<std::string, std::string> helper_name_map;
   helper_name_map["PointToPoint"] = "PointToPointHelper";
   helper_name_map["Csma"] = "CsmaHelper";
-  for (const auto& item : channels) {
+  helper_name_map["Wifi"] = "WifiHelper";
+  helper_name_map["WifiApSta"] = "WifiHelper";
+  for (const auto& item : m_channels) {
     const auto& ch_buf = item.second;
+    // if user set channel.type
     if ( helper_name_map[ch_buf.type] != "" ) {
       lines.push_back("// Channel : " + ch_buf.name );
       lines.push_back(helper_name_map[ch_buf.type]
                         + " " + ch_buf.name + ";");
     } else {
+      // if no user set channel.type
       if ( ch_buf.nodes.size() < 2 )
       {
         lines.push_back("// [TGIM ERR] Channel '"
@@ -83,7 +87,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
 
   // subnet
   lines.push_back("// subnet");
-  for (const auto& item : subnets) {
+  for (const auto& item : m_subnets) {
     const auto& name = item.first;
     const auto& subnet = item.second;
     lines.push_back("struct " + subnet.GetName() + " " + name + ";" );
@@ -98,11 +102,11 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   lines.push_back(" ******************************************************/");
   // all nodes
   lines.push_back("// nodes");
-  lines.push_back("NodeContainer " + name_all_nodes + ";");
+  lines.push_back("NodeContainer " + m_name_all_nodes + ";");
   // netdevices
-  for (const auto& item : channels) {
+  for (const auto& item : m_channels) {
     const auto& channel = item.second;
-    netdevs[channel.name] = "ndc_" + channel.name;
-    lines.push_back("NetDeviceContainer " + netdevs[channel.name] + ";");
+    m_netdevs[channel.name] = "ndc_" + channel.name;
+    lines.push_back("NetDeviceContainer " + m_netdevs[channel.name] + ";");
   }
 }

@@ -25,6 +25,9 @@ Author: hiratake26to@gmail.com
 
 #define NODE_T_BASIC 0
 #define NODE_T_IFACE 1
+#define NODE_T_ADHOC 2
+#define NODE_T_AP    3
+#define NODE_T_STA   4
 
 /** @brief Node */
 struct Node {
@@ -35,4 +38,7 @@ struct Node {
   std::string subnet_name;  // name as subnet instance
   std::string subnet_class; // subnet class name
   std::string subnet_node_id; // id for subnet class
+  int x;
+  int y;
+  int z;
 };

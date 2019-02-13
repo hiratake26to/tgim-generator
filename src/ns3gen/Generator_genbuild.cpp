@@ -45,7 +45,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   lines.push_back("/*******************************************************");
   lines.push_back(" * build function                                      *");
   lines.push_back(" ******************************************************/");
-  lines.push_back("void " + this->name_build_func + "() {");
+  lines.push_back("void " + m_name_build_func + "() {");
   lines.indentRight();
 
   //
@@ -54,7 +54,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //std::cout << "***CONFIG CHANNEL***" << std::endl;
 
   lines.push_back("// config channel");
-  for (const auto& item : channels) {
+  for (const auto& item : m_channels) {
     Channel ch = item.second;
 
     if ( ch.config == "") {
@@ -115,7 +115,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //std::cout << "***BUILD ALL SUBNETS***" << std::endl;
 
   lines.push_back("// build all subnets");
-  for (const auto& item : subnets) {
+  for (const auto& item : m_subnets) {
     const auto& name = item.first;
     lines.push_back(name + ".build();" );
   }
@@ -126,17 +126,33 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //std::cout << "***CREATE ALL NODES***" << std::endl;
 
   lines.push_back("// create all nodes");
-  for (const auto& item : nodes) {
+  for (const auto& item : m_nodes) {
     const auto& node = item.second;
     std::string added = "CreateObject<Node>()";
     if ( node.type == NODE_T_IFACE ) {
       added = node.subnet_name + ".nodes.Get("+node.subnet_class+"::"+node.subnet_node_id+")";
     }
-    lines.push_back("// - " + node.name);
-    lines.push_back(this->name_all_nodes
+    lines.push_back("{ // - " + node.name);
+    lines.indentRight();
+
+    lines.push_back(m_name_all_nodes
                   + ".Add("
                   + added
                   + ");");
+    // if node.type is {Adhoc, Ap, Sta} then install mobility and allocate position.
+    if ( node.type == NODE_T_ADHOC
+      || node.type == NODE_T_AP
+      || node.type == NODE_T_STA) {
+      lines.push_back("// Install mobility");
+      lines.push_back("installMobility(nodes.Get("+node.name+"));");
+      lines.push_back("allocateFixedPos(nodes.Get("+node.name+"), "
+          + std::to_string(node.x) + ", "
+          + std::to_string(node.y) + ", "
+          + std::to_string(node.z) + ");");
+    }
+
+    lines.indentLeft();
+    lines.push_back("}");
   }
 
   // name each node
@@ -146,7 +162,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     const auto& node = elem.value().second;
     const auto& i = std::to_string(elem.index());
     lines.push_back(node.name + " = "
-                  + this->name_all_nodes + ".Get(" + i + ");");
+                  + m_name_all_nodes + ".Get(" + i + ");");
   }
   */
 
@@ -160,38 +176,85 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   std::unordered_map<std::string, std::function<void(Channel&)>> connector;
   connector["PointToPoint"]
     = [=, &lines](Channel& channel) { 
+      lines.push_back( "{ // - "+channel.name );
+      lines.indentRight();
 			if (channel.nodes.size() < 2) {
-				lines.push_back( "// " + netdevs[channel.name]
+				lines.push_back( "// " + m_netdevs[channel.name]
 																+ ": not connected due to node count less than 2" );
 				return;
 			}
-      lines.push_back( netdevs[channel.name] + " = "
+      lines.push_back( m_netdevs[channel.name] + " = "
                         + channel.name + ".Install("
-                        + this->name_all_nodes + ".Get(" + channel.nodes[0] + ")"
+                        + m_name_all_nodes + ".Get(" + channel.nodes[0].name + ")"
                         + ","
-                        + this->name_all_nodes + ".Get(" + channel.nodes[1] + ")"
+                        + m_name_all_nodes + ".Get(" + channel.nodes[1].name + ")"
                       + ");" );
+      lines.indentLeft();
     };
   connector["Csma"]
     = [=, &lines](Channel& channel) { 
       // make node container
-      lines.push_back( "{" );
+      lines.push_back( "{ // - "+channel.name );
       lines.indentRight();
       lines.push_back( "NodeContainer nc_local;" );
       // add node
       for (const auto& node : channel.nodes) {
         lines.push_back( "nc_local.Add("
-                        + this->name_all_nodes + ".Get(" + node + ")"
+                        + m_name_all_nodes + ".Get(" + node.name + ")"
                         + ");" );
       }
       // connect csma
-      lines.push_back( netdevs[channel.name] + " = "
+      lines.push_back( m_netdevs[channel.name] + " = "
                         + channel.name + ".Install(nc_local);" );
       lines.indentLeft();
       lines.push_back( "}" );
     };
+  connector["Wifi"]
+    = [=, &lines](Channel& channel) { 
+      // make node container
+      lines.push_back( "{ // - "+channel.name );
+      lines.indentRight();
+      lines.push_back( "NodeContainer nc_local;" );
+      // add node
+      for (const auto& node : channel.nodes) {
+        lines.push_back( "nc_local.Add("
+                        + m_name_all_nodes + ".Get(" + node.name + ")"
+                        + ");" );
+      }
+      // connect Wifi
+      lines.push_back( m_netdevs[channel.name] + " = "
+                        + "WifiAdhocInstall("+channel.name+", nc_local);" );
+      lines.indentLeft();
+      lines.push_back( "}" );
+    };
+  connector["WifiApSta"]
+    = [=, &lines](Channel& channel) { 
+      // make node container
+      lines.push_back( "{ // - "+channel.name );
+      lines.indentRight();
+      lines.push_back( "NodeContainer nc_local_ap;" );
+      lines.push_back( "NodeContainer nc_local_stas;" );
+      // add AP node
+      for (const auto& node : channel.nodes) if (node.type == NODE_T_AP) {
+        // [TODO] check that add just one AP node.
+        lines.push_back( "nc_local_ap.Add("
+                        + m_name_all_nodes + ".Get(" + node.name + ")"
+                        + ");" );
+      }
+      // add STA node
+      for (const auto& node : channel.nodes) if (node.type == NODE_T_STA){
+        lines.push_back( "nc_local_stas.Add("
+                        + m_name_all_nodes + ".Get(" + node.name + ")"
+                        + ");" );
+      }
+      // connect Wifi
+      lines.push_back( m_netdevs[channel.name] + " = "
+                        + "WifiApStaInstall("+channel.name+", nc_local_ap, nc_local_stas);" );
+      lines.indentLeft();
+      lines.push_back( "}" );
+    };
   // -- connect node to channel
-  for (const auto& item : channels) {
+  for (const auto& item : m_channels) {
     Channel ch_buf = item.second;
     if ( connector[ch_buf.type] )
     {
@@ -200,7 +263,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     else // auto set channel type, this will been generated latest for loop
     {
       // generate added channnel name
-      std::string added_ch_name = "link_auto_"+std::to_string(channels.size());
+      std::string added_ch_name = "link_auto_"+std::to_string(m_channels.size());
 
       if ( ch_buf.nodes.size() < 2 )
       {
@@ -210,15 +273,15 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       }
       else if ( ch_buf.nodes.size() == 2 )
       {
-        auto_channels[ch_buf.name] = ch_buf;
+        m_auto_channels[ch_buf.name] = ch_buf;
       }
       else if ( ch_buf.nodes.size() > 2 )
       {
-        auto_channels[ch_buf.name] = ch_buf;
+        m_auto_channels[ch_buf.name] = ch_buf;
       }
     }
   }
-  for (const auto& item : auto_channels) {
+  for (const auto& item : m_auto_channels) {
     Channel ch_buf = item.second;
     if ( connector[ch_buf.type] )
     {
@@ -232,11 +295,11 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //
   lines.push_back("// install internet stack");
   lines.push_back("InternetStackHelper stack;");
-  for (const auto& item : nodes) {
+  for (const auto& item : m_nodes) {
     const auto& node = item.second;
     if (node.type == NODE_T_IFACE) continue; // already installed in subnet build
     lines.push_back("stack.Install("
-                      + this->name_all_nodes + ".Get(" + node.name + ")"
+                      + m_name_all_nodes + ".Get(" + node.name + ")"
                       + ");" );
   }
 
@@ -254,10 +317,10 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
    * Ipv4InterfaceContainer addresses = ip.Assign (devs); */
   lines.push_back("{ Ipv4AddressHelper ip;");
   lines.indentRight();
-  for (const auto& item : channels) {
+  for (const auto& item : m_channels) {
     Channel ch = item.second;
 
-    std::string nd = netdevs[ch.name];
+    std::string nd = m_netdevs[ch.name];
     lines.push_back("// " + nd);
     json jconf;
     if (ch.config.empty()) {

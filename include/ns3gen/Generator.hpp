@@ -40,30 +40,30 @@ using json = nlohmann::json;
 
 class NetworkGenerator {
   // names
-  std::string name;
-  std::string name_build_func = "build";
-  std::string name_app_func = "app";
-  std::string name_all_nodes = "nodes";
+  std::string m_name;
+  std::string m_name_build_func = "build";
+  std::string m_name_app_func = "app";
+  std::string m_name_all_nodes = "nodes";
   // type
-  int net_type;
+  int m_net_type;
   // node
-  std::map<std::string, Node> nodes;
+  std::map<std::string, Node> m_nodes;
   // subnet
-  std::map<std::string, Network> subnets;
+  std::map<std::string, Network> m_subnets;
   // channel
-  std::map<std::string, Channel> channels;
+  std::map<std::string, Channel> m_channels;
   // channel
-  std::map<std::string, Application> apps;
+  std::map<std::string, Application> m_apps;
   // auto_channel
-  std::map<std::string, Channel> auto_channels;
+  std::map<std::string, Channel> m_auto_channels;
 
   // netdevice (channel_name , netdev_name)
-  std::map<std::string, std::string> netdevs;
+  std::map<std::string, std::string> m_netdevs;
 
   // ns3 code template
-  TemplateLoader ns3template_loader;
+  TemplateLoader m_ns3template_loader;
   json ns3template;
-  AppModelLoader ns3appmodel_loader;
+  AppModelLoader m_ns3appmodel_loader;
 
 public:
   /**
