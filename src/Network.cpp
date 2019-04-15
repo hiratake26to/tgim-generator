@@ -43,6 +43,31 @@ void Network::AddNode(std::string name, std::string config)
   m_nodes[name] = added;
 }
 
+void Network::AddNode(std::string name, std::string type, Vector3D vec, std::string config)
+{
+  Node added { (int)m_nodes.size(), name, config };
+  if (type == "Adhoc") {
+    added.type = NODE_T_ADHOC;
+  }
+  else if (type == "Ap") {
+    added.type = NODE_T_AP;
+  }
+  else if (type == "Sta") {
+    added.type = NODE_T_STA;
+  }
+  else if (type == "Basic" ){
+    added.type = NODE_T_BASIC;
+  }
+  else {
+    std::cout << "network '" << m_name << "' node '" << name << "' is no specified type, it type decides to 'Basic'." << std::endl;
+    added.type = NODE_T_BASIC;
+  }
+  added.x = vec.x;
+  added.y = vec.y;
+  added.z = vec.z;
+  m_nodes[name] = added;
+}
+
 void Network::AddSubnet(std::string name, const Network& subnet)
 {
   if ( m_type != NET_T_WNET ) m_type = NET_T_WNET; // change type to NET_T_WNET
@@ -61,16 +86,16 @@ void Network::AddApp(std::string name, std::string type, const std::map<std::str
   m_apps[name] = added;
 }
 
-void Network::ConnectChannel(std::string ch_name, std::string node_name)
+void Network::ConnectChannel(std::string ch_name, Node node)
 {
-  if (m_nodes[node_name].name != node_name) throw std::logic_error("not exist node has name of " + node_name);
+  if (m_nodes[node.name].name != node.name) throw std::logic_error("not exist node has name of " + node.name);
   if (m_channels[ch_name].name != ch_name) {
     AddChannel(ch_name, "UNDEFINED", "");
   }
-  m_channels[ch_name].nodes.push_back(node_name);
+  m_channels[ch_name].nodes.push_back(node);
 }
 
-std::string Network::UpIface(std::string subnet_name, std::string iface_name)
+Node Network::UpIface(std::string subnet_name, std::string iface_name)
 {
   if (m_subnets[subnet_name].GetType() == NET_T_NONE) {
     throw std::runtime_error(m_name + " is has not subnet '" + subnet_name + "'");
@@ -85,7 +110,7 @@ std::string Network::UpIface(std::string subnet_name, std::string iface_name)
   m_nodes[name_with_prefix].subnet_name = subnet_name;
   m_nodes[name_with_prefix].subnet_class = m_subnets[subnet_name].GetName();
   m_nodes[name_with_prefix].subnet_node_id = sub_n[iface_name].name;
-  return name_with_prefix;
+  return m_nodes[name_with_prefix];
 }
 
 void Network::NodeConfig(std::string name, std::string conf)
@@ -107,6 +132,10 @@ int Network::GetType() const
 std::map<std::string, Node> Network::GetNodes()
 {
   return m_nodes;
+}
+Node Network::GetNode(std::string node_name)
+{
+  return m_nodes[node_name];
 }
 
 std::map<std::string, Network> Network::GetSubnets()
@@ -138,7 +167,9 @@ void Network::DumpJson()
   }
   for (const auto& item : m_channels) {
     const auto& channel = item.second;
-    s.update((std::string)"channel."+channel.name, "nodes", channel.nodes ) ;
+    std::vector<std::string> ch_nodes;
+    for (int i = 0; i < channel.nodes.size(); ++i) ch_nodes.push_back(channel.nodes[i].name);
+    s.update((std::string)"channel."+channel.name, "nodes", ch_nodes ) ;
     s.update((std::string)"channel."+channel.name, "conf", channel.config ) ;
   }
 

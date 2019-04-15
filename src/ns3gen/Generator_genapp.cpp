@@ -152,20 +152,20 @@ void NetworkGenerator::gen_app(CodeSecretary& lines) {
   lines.push_back("/*******************************************************");
   lines.push_back(" * application build function                          *");
   lines.push_back(" ******************************************************/");
-  lines.push_back("void " + this->name_app_func + "() {");
+  lines.push_back("void " + m_name_app_func + "() {");
   lines.indentRight();
 
 /*
 setMyTcpApp(Ptr<Node> n, int nport, Ptr<Node> m, int mport, int sim_start, int sim_stop);
 */
-  for (const auto& item : apps) {
+  for (const auto& item : m_apps) {
     const auto& app = item.second;
     // `app.name` is not used, it is only used for identify app
     lines.push_back("{");
     lines.indentRight();
       std::string instance_name = "__tgim_app_" + app.type;
       lines.push_back( "tgim::app::" + app.type + " " + instance_name + ";");
-      expandParams(lines, this->ns3appmodel_loader, instance_name, app , name_all_nodes, nodes);
+      expandParams(lines, m_ns3appmodel_loader, instance_name, app , m_name_all_nodes, m_nodes);
       lines.push_back( instance_name + ".install();" );
     lines.indentLeft();
     lines.push_back("}");

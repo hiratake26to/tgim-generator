@@ -70,10 +70,28 @@ Network NetworkLoader::load(std::string filename) {
     if (!it.value()["config"].empty()) {
       conf = it.value()["config"].dump();
     }
-    net.AddNode(it.key(), conf);
+    Vector3D vec;
+    try {
+      vec = Vector3D { 
+        (*it)["point"]["x"],
+        (*it)["point"]["y"],
+        0
+      };
+    } catch (std::exception e) {
+      std::cerr << "node." << it.key() << ".point is invalid!, must specify .x, .y value." << std::endl;
+      throw e;
+    }
+    // set z value.
+    if ( (*it)["point"]["z"].is_number() ) {
+      vec.z = (*it)["point"]["z"];
+    } else {
+      std::cerr << "node." << it.key() << ".point.z is set automatically to 0." << std::endl;
+    }
+
+    net.AddNode(it.key(), it.value()["type"], vec, conf);
     // connect
     for (auto netif : it.value()["netifs"]) {
-      net.ConnectChannel(netif["connect"], it.key());
+      net.ConnectChannel(netif["connect"], net.GetNode(it.key()));
     }
   }
   } /* load node */
@@ -91,9 +109,9 @@ Network NetworkLoader::load(std::string filename) {
     net.AddSubnet(it.key(), snet);
     // netifs up
     for (auto netif : it.value()["netifs"]) {
-      std::string nname = net.UpIface(it.key(), netif["up"]);
+      Node upped = net.UpIface(it.key(), netif["up"]);
       if (netif["connect"].is_string()) {
-        net.ConnectChannel(netif["connect"], nname);
+        net.ConnectChannel(netif["connect"], upped);
       }
     }
   }

@@ -22,11 +22,12 @@ Author: hiratake26to@gmail.com
 #pragma once
 
 #include "network-prvt.hpp"
+#include "Node.hpp"
 
 struct Channel {
   std::string name;
   std::string type;
   std::string config;
-  std::vector<std::string> nodes;
+  std::vector<Node> nodes;
 };
 

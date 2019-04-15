@@ -31,21 +31,21 @@ using json = nlohmann::json;
 NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_loader, const AppModelLoader& appmodel_loader)
 {
   // nodes
-  this->nodes = net.GetNodes();
+  m_nodes = net.GetNodes();
   // subnets
-  this->subnets = net.GetSubnets();
+  m_subnets = net.GetSubnets();
   // channels
-  this->channels = net.GetChannels();
+  m_channels = net.GetChannels();
   // apps
-  this->apps = net.GetApps();
+  m_apps = net.GetApps();
   // name
-  this->name = net.GetName();
+  m_name = net.GetName();
   // type
-  this->net_type = net.GetType();
+  m_net_type = net.GetType();
 
   // loader
-  this->ns3template_loader = template_loader;
-  this->ns3appmodel_loader = appmodel_loader;
+  m_ns3template_loader = template_loader;
+  m_ns3appmodel_loader = appmodel_loader;
 
   // other init
   AddressGenerator::Init();
@@ -53,14 +53,14 @@ NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_l
 
 std::vector<std::string> NetworkGenerator::CppCode() {
   // load ns3 code template
-  ns3template = this->ns3template_loader.load();
+  ns3template = m_ns3template_loader.load();
 
   CodeSecretary lines;
 
   // namespace begin
   lines.push_back("namespace tgim {");
   // struct struct
-  lines.push_back("struct " + name + " {");
+  lines.push_back("struct " + m_name + " {");
   lines.indentRight();
 
   // declare
