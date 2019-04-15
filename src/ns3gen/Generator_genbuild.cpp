@@ -118,6 +118,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   for (const auto& item : subnets) {
     const auto& name = item.first;
     lines.push_back(name + ".build();" );
+    lines.push_back(name + ".app();" );
   }
 
   //
