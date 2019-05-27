@@ -24,6 +24,10 @@ void
 CodeSecretary::push_back(std::string line) {
   m_code.push_back(m_indent+line);
 }
+void
+CodeSecretary::push_back(std::vector<std::string> lines) {
+  for (const auto& l : lines) push_back(l);
+}
 
 void
 CodeSecretary::indentRight() {

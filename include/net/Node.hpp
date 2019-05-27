@@ -29,16 +29,23 @@ Author: hiratake26to@gmail.com
 #define NODE_T_AP    3
 #define NODE_T_STA   4
 
+struct Netif {
+  std::string connect;
+  std::string as;
+};
+
 /** @brief Node */
 struct Node {
   int id;
   std::string name;
   std::string config;
   int type;
+  std::vector<Netif> netifs;
   std::string subnet_name;  // name as subnet instance
   std::string subnet_class; // subnet class name
   std::string subnet_node_id; // id for subnet class
   int x;
   int y;
   int z;
+  operator std::string() const;
 };

@@ -43,7 +43,7 @@ void Network::AddNode(std::string name, std::string config)
   m_nodes[name] = added;
 }
 
-void Network::AddNode(std::string name, std::string type, Vector3D vec, std::string config)
+void Network::AddNode(std::string name, std::string type, const std::vector<Netif>& netifs, Vector3D vec, std::string config)
 {
   Node added { (int)m_nodes.size(), name, config };
   if (type == "Adhoc") {
@@ -62,6 +62,7 @@ void Network::AddNode(std::string name, std::string type, Vector3D vec, std::str
     std::cout << "network '" << m_name << "' node '" << name << "' is no specified type, it type decides to 'Basic'." << std::endl;
     added.type = NODE_T_BASIC;
   }
+  added.netifs = netifs;
   added.x = vec.x;
   added.y = vec.y;
   added.z = vec.z;
@@ -105,6 +106,7 @@ Node Network::UpIface(std::string subnet_name, std::string iface_name)
     throw std::runtime_error("node is not defined in " + subnet_name);
   }
   std::string name_with_prefix = subnet_name+"_"+sub_n[iface_name].name;
+  // [TODO] Integrate node role ("as")
   AddNode(name_with_prefix, sub_n[iface_name].config);
   m_nodes[name_with_prefix].type = NODE_T_IFACE;
   m_nodes[name_with_prefix].subnet_name = subnet_name;

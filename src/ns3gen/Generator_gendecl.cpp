@@ -107,6 +107,8 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   for (const auto& item : m_channels) {
     const auto& channel = item.second;
     m_netdevs[channel.name] = "ndc_" + channel.name;
+    m_netdevs_has_ip[channel.name] = "ndc_" + channel.name + "_has_ip";
     lines.push_back("NetDeviceContainer " + m_netdevs[channel.name] + ";");
+    lines.push_back("NetDeviceContainer " + m_netdevs_has_ip[channel.name] + ";");
   }
 }

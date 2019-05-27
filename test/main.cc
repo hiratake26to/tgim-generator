@@ -132,7 +132,13 @@ int main(int argc, char *argv[]) {
     cout << "appmodel-path=\"" << GenW::getAppModelPath() << "\"" << endl;
 
     cout << "==> Convert: " << file << endl;
-    GenW::generate(file);
+    try {
+      GenW::generate(file);
+    } catch(std::exception e) {
+      std::cerr << e.what() << std::endl;
+      cout << "Convert failed" << std::endl;
+      return -1;
+    }
     cout << "OK" << endl;
 
     return 0;

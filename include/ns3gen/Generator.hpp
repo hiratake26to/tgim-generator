@@ -59,6 +59,8 @@ class NetworkGenerator {
 
   // netdevice (channel_name , netdev_name)
   std::map<std::string, std::string> m_netdevs;
+  // netdevice, has ip (channel_name , netdev_name)
+  std::map<std::string, std::string> m_netdevs_has_ip;
 
   // ns3 code template
   TemplateLoader m_ns3template_loader;

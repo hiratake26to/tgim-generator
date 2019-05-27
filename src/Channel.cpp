@@ -13,38 +13,15 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file GenUtil.hpp
- * \brief Generator utility.
+ * \file Channel.cpp
  * \author hiratake26to@gmail
  * \date 2017
  */
 
-#pragma once
+#include "net/Channel.hpp"
 
-#include <string>
+#include <iostream>
 
-class AddressValue {
-  uint32_t m_local;
-  uint32_t m_mask;
-  void parse_and_set(const std::string& value);
-public:
-  AddressValue(const std::string& value);
-  std::string GetLocal();
-  std::string GetNetworkAddress();
-  std::string GetHost();
-  std::string GetMask();
-};
-
-class AddressGenerator {
-  // 10.0.0.0 ~ 10.255.255.255
-  static uint32_t address_net;
-  static uint32_t address_mask;
-  static uint32_t address_last;
-public:
-  static void Init();
-  static std::string GetLocal();
-  static std::string GetNetworkAddress();
-  static std::string GetHost();
-  static std::string GetMask();
-  static void Next();
-};
+Channel::operator std::string() const {
+  return std::string() + "Channel{" + name + "," + type + "," + config + ",...}";
+}

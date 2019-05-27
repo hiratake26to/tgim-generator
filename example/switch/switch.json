@@ -1,0 +1,42 @@
+{
+  "name": "switch",
+  "node": {
+    "n0": {
+      "point": { "x": 100, "y": 100 },
+      "netifs": [
+        { "connect": "sw" }
+      ]
+    },
+    "n1": {
+      "point": { "x": 200, "y": 100 },
+      "netifs": [
+        { "connect": "sw" }
+      ]
+    },
+    "n2": {
+      "point": { "x": 300, "y": 100 },
+      "netifs": [
+        { "connect": "sw" }
+      ]
+    }
+  },
+  "channel": {
+    "sw": {
+      "point": { "x": 200, "y": 200 },
+      "type": "Switch",
+      "config": { "Delay": "1ms", "DataRate": "100Mbps" }
+    }
+  },
+  "apps": {
+    "myping": {
+      "name": "myping",
+      "type": "ping",
+      "args": {
+        "shost": "${n0}", "sport": 60000,
+        "dhost": "${n1}", "dport": 8080,
+        "start": 1, "stop": 10,
+        "rate": "1Mbps"
+      }
+    }
+  }
+}

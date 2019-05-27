@@ -24,6 +24,42 @@ Author: hiratake26to@gmail.com
 #include <boost/algorithm/string.hpp>
 #include <tao/pegtl.hpp>
 
+static std::string toStrAddr(uint32_t addr) {
+  uint8_t oct[4];
+  // [0].[1].[2].[3]
+  oct[0] = 0xFF & (addr >> 24);
+  oct[1] = 0xFF & (addr >> 16);
+  oct[2] = 0xFF & (addr >>  8);
+  oct[3] = 0xFF & (addr);
+
+  std::string str_addr
+    = std::to_string(oct[0]) + "."
+    + std::to_string(oct[1]) + "."
+    + std::to_string(oct[2]) + "."
+    + std::to_string(oct[3]);
+
+  return str_addr;
+}
+
+static uint32_t toBinAddr(std::string s) {
+  uint32_t ret = 0;
+  std::string buf = "";
+  int i = 0;
+  for (const char& c : s) {
+    if (c >= '0' && c <= '9') buf += c;
+    else {
+      int num = std::atoi(buf.c_str());
+      ret |= num << (24-8*i);
+      buf = "";
+      ++i;
+    }
+  }
+  int num = std::atoi(buf.c_str());
+  ret |= num;
+  return ret;
+}
+
+
 namespace pegtl = tao::pegtl;
 
 namespace Address {
@@ -168,18 +204,24 @@ void AddressValue::parse_and_set(const std::string& value) {
   std::cout << "ok : " << ok << std::endl;
   */
 
-  m_local = local;
-  m_mask = mask;
+  m_local = toBinAddr(local);
+  m_mask = toBinAddr(mask);
 }
 
 AddressValue::AddressValue(const std::string& value) {
   parse_and_set(value);
 }
 std::string AddressValue::GetLocal() {
-  return m_local;
+  return toStrAddr(m_local);
+}
+std::string AddressValue::GetNetworkAddress() {
+  return toStrAddr(m_local & m_mask);
+}
+std::string AddressValue::GetHost() {
+  return toStrAddr(m_local & ~m_mask);
 }
 std::string AddressValue::GetMask() {
-  return m_mask;
+  return toStrAddr(m_mask);
 }
 
 //
@@ -190,23 +232,6 @@ uint32_t AddressGenerator::address_net;
 uint32_t AddressGenerator::address_mask;
 uint32_t AddressGenerator::address_last;
 
-std::string AddressGenerator::toStrAddr(uint32_t addr) {
-  uint8_t oct[4];
-  // [0].[1].[2].[3]
-  oct[0] = 0xFF & (addr >> 24);
-  oct[1] = 0xFF & (addr >> 16);
-  oct[2] = 0xFF & (addr >>  8);
-  oct[3] = 0xFF & (addr);
-
-  std::string str_addr
-    = std::to_string(oct[0]) + "."
-    + std::to_string(oct[1]) + "."
-    + std::to_string(oct[2]) + "."
-    + std::to_string(oct[3]);
-
-  return str_addr;
-}
-
 void AddressGenerator::Init() {
   address_net   = 0xC0A80000;
   address_mask  = 0xFFFFFF00;
@@ -214,6 +239,12 @@ void AddressGenerator::Init() {
 }
 std::string AddressGenerator::GetLocal() {
   return toStrAddr(address_last);
+}
+std::string AddressGenerator::GetNetworkAddress() {
+  return toStrAddr(address_net & address_mask);
+}
+std::string AddressGenerator::GetHost() {
+  return toStrAddr(address_net & ~address_mask);
 }
 std::string AddressGenerator::GetMask() {
   return toStrAddr(address_mask);

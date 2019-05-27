@@ -9,8 +9,10 @@ JSRC_LIST = $(wildcard $(addsuffix *.json,$(JSRC_DIR)))
 #CXX 	= /usr/bin/g++
 #CC 	= /usr/bin/gcc
 OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
-CFLAGS  = -I./include -g
-CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -I./thirdparty/PEGTL-2.2.0/include -g
+DEBUG   = -g
+#DEBUG   = -g3
+CFLAGS  = -I./include $(DEBUG)
+CXXFLAGS  = -std=c++11 -I./include -I./thirdparty/include -I./thirdparty/PEGTL-2.2.0/include $(DEBUG)
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)

@@ -29,6 +29,7 @@ class CodeSecretary {
 public:
   CodeSecretary() = default;
   void push_back(std::string line);
+  void push_back(std::vector<std::string> lines);
   void indentRight();
   void indentLeft();
   std::vector<std::string> get();

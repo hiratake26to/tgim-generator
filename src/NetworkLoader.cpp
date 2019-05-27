@@ -20,8 +20,9 @@ Author: hiratake26to@gmail.com
 
 #include "loader/NetworkLoader.hpp"
 
-#include <json.hpp>
 #include <fstream>
+#include <iostream>
+#include <json.hpp>
 
 namespace {
   using json = nlohmann::json;
@@ -88,7 +89,32 @@ Network NetworkLoader::load(std::string filename) {
       std::cerr << "node." << it.key() << ".point.z is set automatically to 0." << std::endl;
     }
 
-    net.AddNode(it.key(), it.value()["type"], vec, conf);
+    // [FIXME] type is option, role
+    {
+      // [TODO] add parse "as"
+      std::vector<Netif> ifs;
+      std::cout << it.key() << "'s netifs:" << std::endl;
+      for (auto json_netif : (*it)["netifs"]) {
+        if ( json_netif.contains("as") ) {
+          std::cout << "- connect: " << json_netif["connect"] << ", as: " << json_netif["as"] << std::endl;
+          ifs.push_back(
+              Netif { json_netif["connect"], json_netif["as"] }
+              );
+        } else {
+          std::cout << "- connect: " << json_netif["connect"] << "(, as: \"\")" << std::endl;
+          ifs.push_back(
+              Netif { json_netif["connect"], "" }
+              );
+        }
+      }
+      if ( (*it).contains("type") ) {
+        net.AddNode(it.key(), it.value()["type"], ifs, vec, conf);
+      } else {
+        std::cout << "node." << it.key() << ".type is set automatically to \"Basic\".";
+        net.AddNode(it.key(), "Basic", ifs, vec, conf);
+      }
+    }
+
     // connect
     for (auto netif : it.value()["netifs"]) {
       net.ConnectChannel(netif["connect"], net.GetNode(it.key()));

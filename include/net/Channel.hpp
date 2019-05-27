@@ -29,5 +29,6 @@ struct Channel {
   std::string type;
   std::string config;
   std::vector<Node> nodes;
+  operator std::string() const;
 };
 

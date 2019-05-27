@@ -53,13 +53,13 @@ public:
 public:
   /** Add node to network **/
   void AddNode(std::string name, std::string config);
-  void AddNode(std::string name, std::string type, Vector3D vec, std::string config);
+  void AddNode(std::string name, std::string type, const std::vector<Netif>& netifs, Vector3D vec, std::string config);
   void AddSubnet(std::string name, const Network& subnet);
   void AddChannel(std::string name, std::string type, std::string config);
   void AddApp(std::string name, std::string type, const std::map<std::string, std::string>& args);
 
   /** Add a link from node to node **/
-  void ConnectChannel(std::string ch_name, Node node_name);
+  void ConnectChannel(std::string ch_name, Node node);
 
   /** Up subnet iface */
   // return upped iface as Node
