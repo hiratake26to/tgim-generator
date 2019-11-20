@@ -29,6 +29,7 @@ Author: hiratake26to@gmail.com
 
 #include "CodeSecretary.hpp"
 #include "net/Application.hpp"
+#include "net/Address.hpp"
 #include "net/Channel.hpp"
 #include "net/Network.hpp"
 #include "net/Node.hpp"

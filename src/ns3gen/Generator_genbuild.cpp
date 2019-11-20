@@ -19,50 +19,69 @@ Author: hiratake26to@gmail.com
  */
 
 #include "ns3gen/Generator.hpp"
-#include "ns3gen/GenUtil.hpp"
 
 #include <iostream>
 #include <algorithm>
 #include <utility>
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/string.hpp>
+using std::string;
+using std::vector;
 
 // parse json config
 #include <json.hpp>
 using json = nlohmann::json;
 
 // utility
-static bool findRole(const Node& node, const std::vector<std::string>& roles) {
-  std::cout << "node " << node.name << " has roles { ";
-  for (const auto& ni : node.netifs) {
-    std::cout << ni.as << ", ";
+static bool findRole(const Node& node, int netif_id, const vector<string>& roles) {
+  for (const auto& ni_role : node.netifs[netif_id].as) {
+    for (const auto& find_role : roles) {
+      if (ni_role == find_role) {
+        return true;
+      }
+    }
   }
-  std::cout << "}" << std::endl;
+  return false;
+}
+static bool findRole(const Node& node, const vector<string>& roles) {
+  //std::cout << "node " << node.name << " has roles { ";
+  //for (const auto& ni : node.netifs) {
+  //  for (const auto& role : ni.as) {
+  //    std::cout << role << ", ";
+  //  }
+  //}
+  //std::cout << "}" << std::endl;
 
   auto p = std::find_if(node.netifs.begin(), node.netifs.end()
       , [&roles](Netif nif){
-        for (const auto& role : roles) {
-          if (nif.as == role) return true;
+        for (const auto& ni_role : nif.as) {
+          for (const auto& find_role : roles) {
+            if (ni_role == find_role) return true;
+          }
         }
+        return false;
       });
   return (p != node.netifs.end()); // found!
 }
 
 // return list of pair(nic_id, connect_to)
-std::vector<std::pair<int,std::string>>
+vector<std::pair<int,string>>
 getBridgeNics(const Node& node) {
-  std::vector<std::pair<int, std::string>> nics;
+  vector<std::pair<int, string>> nics;
   int i = 0;
   for (const auto& ni : node.netifs) {
-    if (ni.as == "Switch") {
-      nics.push_back(std::make_pair(i, ni.connect));
+    for (const auto& role : ni.as) {
+      if (role == "Switch") {
+        nics.push_back(std::make_pair(i, ni.connect));
+      }
     }
     i++;
   }
   return nics;
 }
 
-int getNicIdFromChannel(const Node& node, std::string connect_to, std::map<std::string,Channel>m_channels) {
+// return ID of NetDeviceContainer
+int getNicIdFromChannel(const Node& node, string connect_to, std::map<string,Channel>m_channels) {
   Channel ch = m_channels[connect_to]; // [TODO] CHECK VALID!
   int i = 0;
   for (auto&& it = ch.nodes.begin(); it != ch.nodes.end(); ++it) {
@@ -73,13 +92,13 @@ int getNicIdFromChannel(const Node& node, std::string connect_to, std::map<std::
   return -1;
 }
 
-std::vector<int> collectNodeHasIp(Channel channel)
+vector<int> collectNodeHasIp(Channel channel)
 {
-  std::vector<int> ret;
+  vector<int> ret;
   int idx = 0;
-  std::cout << "[DEBUG] called collectNodeHasIp" << std::endl;
+  //std::cout << "[DEBUG] called collectNodeHasIp" << std::endl;
   for (const auto& node : channel.nodes) {
-    std::cout << (std::string)node << std::endl;
+    //std::cout << (string)node << std::endl;
     if (not findRole(node, {"Switch"})) {
       ret.push_back(idx);
     }
@@ -88,9 +107,9 @@ std::vector<int> collectNodeHasIp(Channel channel)
   return ret;
 }
 
-std::vector<std::string>
-buildBridgeCode(const Node& node, std::vector<std::pair<int,std::string>> nics
-    , const std::map<std::string,Channel>& m_channels) {
+vector<string>
+buildBridgeCode(const Node& node, vector<std::pair<int,string>> nics
+    , const std::map<string,Channel>& m_channels) {
 #if 0
     { // [TODO] now working
       // bridge install
@@ -109,9 +128,9 @@ buildBridgeCode(const Node& node, std::vector<std::pair<int,std::string>> nics
     const auto& channel = i.second;
 
     std::cout << "name: " << name << std::endl;
-    std::cout << "channel["+name+"]: " << (std::string)channel << std::endl;
+    std::cout << "channel["+name+"]: " << (string)channel << std::endl;
     for (const auto& j : channel.nodes) {
-      std::cout << "channel.node["+j.name+"]: " << (std::string)j << std::endl;
+      std::cout << "channel.node["+j.name+"]: " << (string)j << std::endl;
     }
     std::cout << "---" << std::endl;
   }
@@ -127,6 +146,7 @@ buildBridgeCode(const Node& node, std::vector<std::pair<int,std::string>> nics
   for (const auto& i : nics) {
     const auto& connect_to = i.second;
     int id = getNicIdFromChannel(node, connect_to, m_channels);
+    if (id == -1) throw std::runtime_error("no found index");
     code.push_back("bridge_ndc.Add(ndc_"+connect_to+".Get("+std::to_string(id)+"));");
   }
   code.push_back("BridgeHelper bridge;");
@@ -141,7 +161,7 @@ buildBridgeCode(const Node& node, std::vector<std::pair<int,std::string>> nics
 void NetworkGenerator::gen_build(CodeSecretary& lines) {
   // make config table
   // config_at["channel"] = {"Delay", "DataRate"}
-  std::map<std::string, std::vector<std::string>> config_at;
+  std::map<string, vector<string>> config_at;
   for (auto it = ns3template.begin(); it != ns3template.end(); ++it) {
     for (auto at = it.value()["at"].begin(); at != it.value()["at"].end(); ++at) {
       config_at[at.key()].push_back(it.key());
@@ -167,13 +187,14 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   for (const auto& item : m_channels) {
     Channel ch = item.second;
 
-    if ( ch.config == "") {
+    if ( ch.config == "" ) {
       std::cerr << "WARNING: chennel config is empty in \"" << ch.name  << "\"" << std::endl;
     }
     try {
     /* begin */
     auto jconf = json::parse(ch.config);
 
+    if (jconf.is_object()) {
     // config at channel
     for (auto attr : config_at["channel"])
     { // ** for begin **
@@ -186,13 +207,13 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
           ; ++jmethod_attr)
       {
         // declare variable for function params
-        std::string method;
-        std::string value;
+        string method;
+        string value;
         // set method
         method = jmethod_attr.key();
         // find attr from attributes list
         json jattr_list = ns3template["attributes"]
-                                [jmethod_attr.value().get<std::string>()];
+                                [jmethod_attr.value().get<string>()];
         // set each attr
         for (auto jattr = jattr_list.begin()
             ; jattr != jattr_list.end()
@@ -212,6 +233,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
         }
       }
     } // ** for end **
+    } // if json object end
 
     /* end */
     } catch(const std::exception& e) {
@@ -239,7 +261,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   lines.push_back("// create all nodes");
   for (const auto& item : m_nodes) {
     const auto& node = item.second;
-    std::string added = "CreateObject<Node>()";
+    string added = "CreateObject<Node>()";
     if ( node.type == NODE_T_IFACE ) {
       added = node.subnet_name + ".nodes.Get("+node.subnet_class+"::"+node.subnet_node_id+")";
     }
@@ -252,7 +274,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
                   + ");");
 
     // Add node name that use logging
-    lines.push_back(std::string()
+    lines.push_back(string()
                   + "Names::Add("
                   + "\""+node.name+"\","
                   + "nodes.Get("+node.name+")"
@@ -293,7 +315,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
 
   lines.push_back("// connect link");
   // -- connector generate
-  std::unordered_map<std::string, std::function<void(Channel&)>> connector;
+  std::unordered_map<string, std::function<void(Channel&)>> connector;
   connector["PointToPoint"]
     = [=, &lines](Channel& channel) { 
       lines.push_back( "{ // - "+channel.name );
@@ -306,7 +328,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
 				return;
 			}
 			else if (channel.nodes.size() > 2) {
-        std::string emsg = "Error! " + m_netdevs[channel.name]
+        string emsg = "Error! " + m_netdevs[channel.name]
 																+ ": not connected bacause number of node is more than 2\n"
                                 + "PointToPoint channel can be connected to two node";
         throw std::runtime_error(emsg);
@@ -339,7 +361,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       lines.indentLeft();
       lines.push_back( "}" );
     };
-  connector["Wifi"]
+  connector["WifiAdhoc"]
     = [=, &lines](Channel& channel) { 
       // make node container
       lines.push_back( "{ // - "+channel.name );
@@ -365,17 +387,25 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       lines.push_back( "NodeContainer nc_local_ap;" );
       lines.push_back( "NodeContainer nc_local_stas;" );
       // add AP node
-      for (const auto& node : channel.nodes) if (node.type == NODE_T_AP) {
-        // [TODO] check that add just one AP node.
-        lines.push_back( "nc_local_ap.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
-                        + ");" );
+      for (const auto& node : channel.nodes) {
+        int nif_id = node.getNetifIdxFromConnect(channel.name);
+        if (nif_id == -1) throw std::runtime_error("no found index");
+        if (findRole(node, nif_id, {"Ap"})) {
+          // [TODO] check that add just one AP node.
+          lines.push_back( "nc_local_ap.Add("
+                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + ");" );
+        }
       }
       // add STA node
-      for (const auto& node : channel.nodes) if (node.type == NODE_T_STA){
-        lines.push_back( "nc_local_stas.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
-                        + ");" );
+      for (const auto& node : channel.nodes) {
+        int nif_id = node.getNetifIdxFromConnect(channel.name);
+        if (nif_id == -1) throw std::runtime_error("no found index");
+        if (findRole(node, nif_id, {"Sta"})) {
+          lines.push_back( "nc_local_stas.Add("
+                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + ");" );
+        }
       }
       // connect Wifi
       lines.push_back( m_netdevs[channel.name] + " = "
@@ -390,7 +420,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     if (not connector[ch_buf.type] )
     {
       // generate added channnel name
-      std::string added_ch_name = "link_auto_"+std::to_string(m_channels.size());
+      string added_ch_name = "link_auto_"+std::to_string(m_channels.size());
 
       if ( ch_buf.nodes.size() < 2 )
       {
@@ -407,12 +437,14 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       }
     }
   }
+  lines.push_back("// collect node that install IP address");
   for (const auto& item : m_channels) {
     Channel ch_buf = item.second;
     if ( connector[ch_buf.type] )
     {
       connector[ch_buf.type](ch_buf);
-      // collect netdevs which has ip (e.g. "ndc_c0_has_ip.Add(ndc_c0.Get(0))", 0 of index of that node has ip)
+      // collect netdevs that install IP address
+      // e.g. "ndc_c0_has_ip.Add(ndc_c0.Get(0))", 0 of index of that node has ip
       for (const auto& idx : collectNodeHasIp(ch_buf)) {
         lines.push_back( m_netdevs_has_ip[ch_buf.name]+".Add("+m_netdevs[ch_buf.name]+".Get("+std::to_string(idx)+"));" );
       }
@@ -478,31 +510,53 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   for (const auto& item : m_channels) {
     Channel ch = item.second;
 
-    std::string nd = m_netdevs_has_ip[ch.name];
+    string nd = m_netdevs_has_ip[ch.name];
     lines.push_back("// " + nd);
     json jconf;
     if (ch.config.empty()) {
 			lines.push_back("// config is empty");
       continue;
 		}
+    // parse channel configuration
     jconf = json::parse(ch.config);
-    std::string str_addr;
-    if (!jconf["Address"].is_string()) {
-			lines.push_back("// auto set address");
-      str_addr = AddressGenerator::GetLocal()
-        + "," + AddressGenerator::GetMask();
-      //for (size_t i = 0; i < ch.nodes.size(); i++) {
-        AddressGenerator::Next();
-      //}
+    if (jconf["Address"].is_string()) {
+      AddressGenerator::SetBase(
+          jconf["Address"].get<string>(),
+          AddressType::ChannelUnique);
+    } else if (jconf["Address"].is_object()) {
+      try {
+        string str_addr = jconf["Address"]["Base"].get<string>();
+        string str_type = jconf["Address"]["Type"].get<string>();
+        if (str_type == "ChannelUnique") {
+          AddressGenerator::SetBase(str_addr, AddressType::ChannelUnique);
+        } else if (str_type == "NetworkUnique") {
+          AddressGenerator::SetBase(str_addr, AddressType::NetworkUnique);
+        } else {
+          throw std::runtime_error(
+              string{} +
+              "configuration at `channel." + 
+              ch.name +
+              ".config.Address.Type` is invalid");
+        }
+      } catch (const std::exception& e) {
+        std::cerr << "Exception: " << e.what() << std::endl;
+        throw std::runtime_error(
+            string{} +
+            "configuration at `channel." + 
+            ch.name +
+            ".config.Address` is invalid object");
+      }
     } else {
-      str_addr = jconf["Address"].get<std::string>();
+			lines.push_back("// auto set address");
+      AddressGenerator::SetDefault();
     }
-    AddressValue addr(str_addr);
-    std::string netaddr = addr.GetNetworkAddress();
-    std::string mask = addr.GetMask();
-    std::string base_host = addr.GetHost();
+    // calc address
+    AddressGenerator::Next();
+    string netaddr = AddressGenerator::GetNetworkAddress();
+    string mask = AddressGenerator::GetMask();
+    string base_host = AddressGenerator::GetHost();
     // set base
-    lines.push_back( (std::string)"ip.SetBase ("
+    lines.push_back( (string)"ip.SetBase ("
                       + "\"" + netaddr + "\""
                       + ","
                       + "\"" + mask + "\""

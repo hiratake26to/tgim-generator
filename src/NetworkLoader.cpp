@@ -23,32 +23,47 @@ Author: hiratake26to@gmail.com
 #include <fstream>
 #include <iostream>
 #include <json.hpp>
+#include <algorithm>
+
+using std::string;
+using std::vector;
+using std::cout;
+using std::cerr;
+using std::endl;
+using std::accumulate;
+
+#define RANGE(v) v.begin(), v.end()
 
 namespace {
   using json = nlohmann::json;
-  using std::cout;
-  using std::endl;
 
-  json loadJson(std::string filename) {
+  json loadJson(string filename) {
     std::ifstream ifs(filename);
-    json j;
-    ifs >> j;
-    ifs.close();
-    return j;
+    if (ifs.is_open()) {
+      json j;
+      ifs >> j;
+      ifs.close();
+      return j;
+    }
+
+    string ss;
+    ss += "could not open file: ";
+    ss += filename;
+    throw std::runtime_error(ss);
   }
 }
 
 // impl
-Network NetworkLoader::load(std::string filename) {
+Network NetworkLoader::load(string filename) {
   //cout << "Load from \"" << filename << "\"" << endl;
 
-  std::string net_name;
+  string net_name;
   auto j = loadJson(filename);
   // get name
   {
     json jname = j["name"];
-    if (!jname.is_string()) throw std::runtime_error("name is none");
-    net_name = jname.get<std::string>();
+    if (not jname.is_string()) throw std::runtime_error("no network has a name");
+    net_name = jname.get<string>();
   }
   Network net(Network::NET_T_BASIC, net_name);
 
@@ -65,59 +80,99 @@ Network NetworkLoader::load(std::string filename) {
   { /* load node */
   json jnode = j["node"];
   for (auto it = jnode.begin(); it != jnode.end(); ++it) {
+    const auto& key = it.key();
+    auto&& val = *it;
     //cout << it.key() << " : " << it.value() << endl;
     // get config
-    std::string conf;
-    if (!it.value()["config"].empty()) {
-      conf = it.value()["config"].dump();
+    string conf;
+    if (val["config"].empty()) {
+      conf = val["config"].dump();
     }
     Vector3D vec;
     try {
       vec = Vector3D { 
-        (*it)["point"]["x"],
-        (*it)["point"]["y"],
+        val["point"]["x"],
+        val["point"]["y"],
         0
       };
-    } catch (std::exception e) {
-      std::cerr << "node." << it.key() << ".point is invalid!, must specify .x, .y value." << std::endl;
+    } catch (const std::exception& e) {
+      cerr << "node." << key << ".point is invalid!, must specify .x, .y value." << endl;
       throw e;
     }
     // set z value.
-    if ( (*it)["point"]["z"].is_number() ) {
-      vec.z = (*it)["point"]["z"];
+    if ( val["point"]["z"].is_number() ) {
+      vec.z = val["point"]["z"];
     } else {
-      std::cerr << "node." << it.key() << ".point.z is set automatically to 0." << std::endl;
+      cerr << "node." << key << ".point.z set default value of 0." << endl;
     }
 
-    // [FIXME] type is option, role
-    {
-      // [TODO] add parse "as"
-      std::vector<Netif> ifs;
-      std::cout << it.key() << "'s netifs:" << std::endl;
-      for (auto json_netif : (*it)["netifs"]) {
-        if ( json_netif.contains("as") ) {
-          std::cout << "- connect: " << json_netif["connect"] << ", as: " << json_netif["as"] << std::endl;
-          ifs.push_back(
-              Netif { json_netif["connect"], json_netif["as"] }
-              );
-        } else {
-          std::cout << "- connect: " << json_netif["connect"] << "(, as: \"\")" << std::endl;
-          ifs.push_back(
-              Netif { json_netif["connect"], "" }
-              );
+    // parse `node.as` as a default role for channel.
+    vector<string> default_roles = {};
+    if (val.contains("as")) {
+      if (val["as"].is_string()) {
+        default_roles.push_back(val["as"]);
+      } else if (val["as"].is_array()) {
+        for (const auto& rl : val["as"]) if (rl.is_string()) {
+          default_roles.push_back(rl);
         }
-      }
-      if ( (*it).contains("type") ) {
-        net.AddNode(it.key(), it.value()["type"], ifs, vec, conf);
       } else {
-        std::cout << "node." << it.key() << ".type is set automatically to \"Basic\".";
-        net.AddNode(it.key(), "Basic", ifs, vec, conf);
+        throw std::runtime_error(string()
+            + "Exception: ignore `node." + key + ".as` "
+            + "due to specified type, it must be string.");
+      }
+
+      cerr << "Info: node." << key << " "
+        << ", the default role is "
+        << accumulate(RANGE(default_roles), string{},
+            [](string a,string b){if(a=="")return b;return a+", "+b;})
+        << "." << endl;
+    }
+
+    {
+      // parse `as` that type is [ String | Array ]
+      vector<Netif> ifs;
+      cout << key << "'s netifs:" << endl;
+      for (auto json_netif : val["netifs"]) {
+        // make roles
+        vector<string> roles = {default_roles};
+        if ( json_netif.contains("as") ) { // parse `as`
+          if (json_netif["as"].is_string()) { // for type of String
+            roles.push_back(json_netif["as"]);
+          } else if (json_netif["as"].is_array()) { // for type of Array
+            for (const auto& role : json_netif["as"]) {
+              if (!role.is_string()) {
+                throw std::runtime_error("role is invalid, '" + role.dump() + "' is not string.");
+              }
+              roles.push_back(role);
+            }
+            ifs.push_back( Netif{ json_netif["connect"], roles });
+          } else { // error
+            throw std::runtime_error(
+                "Could not load of node['" + key +
+                "'].as, due to missing json format. type must be type [ String | Array ]");
+          }
+        }
+
+        // append the netif to the node.
+        cout << "- connect: " << json_netif["connect"]
+          << ", as: "
+          << accumulate(RANGE(roles), string{},
+              [](string a,string b){if(a=="")return b;return a+", "+b;})
+          << endl;
+        ifs.push_back( Netif{ json_netif["connect"], roles });
+
+      }
+      if ( val.contains("type") ) {
+        net.AddNode(key, val["type"], ifs, vec, conf);
+      } else {
+        cout << "node." << key << ".type set default value of \"Basic\"." << endl;
+        net.AddNode(key, "Basic", ifs, vec, conf);
       }
     }
 
     // connect
-    for (auto netif : it.value()["netifs"]) {
-      net.ConnectChannel(netif["connect"], net.GetNode(it.key()));
+    for (auto netif : val["netifs"]) {
+      net.ConnectChannel(netif["connect"], net.GetNode(key));
     }
   }
   } /* load node */
@@ -129,7 +184,7 @@ Network NetworkLoader::load(std::string filename) {
     // "subnet name" : { "load" : "file", "netifs" : [ { "up" : "name" }, ... ] }
     //cout << it.key() << " : " << it.value() << endl;
     // load
-    std::string fname = it.value()["load"].get<std::string>();
+    string fname = it.value()["load"].get<string>();
     NetworkLoader loader;
     Network snet = loader.load(fname);
     net.AddSubnet(it.key(), snet);
@@ -148,28 +203,28 @@ Network NetworkLoader::load(std::string filename) {
   json jnode = j["apps"];
   for (auto it = jnode.begin(); it != jnode.end(); ++it) {
     try {
-      //std::cout << it.key() << std::endl;
-      std::string name = it.key();
-      std::string type = it.value()["type"];
+      //cout << it.key() << endl;
+      string name = it.key();
+      string type = it.value()["type"];
       auto jargs = it.value()["args"];
-      std::map<std::string, std::string> args;
+      std::map<string, string> args;
       for (auto it = jargs.begin(); it != jargs.end(); ++it) {
-        //std::cout << "arg load: " << it.key() << ":" << it.value().dump() << std::endl;
+        //cout << "arg load: " << it.key() << ":" << it.value().dump() << endl;
         args[it.key()] = it.value().dump();
       }
 
       net.AddApp(name, type, args);
 
-    } catch (std::exception& e) {
-      std::cerr << e.what() << std::endl;
+    } catch (const std::exception& e) {
+      cerr << e.what() << endl;
       throw std::runtime_error("Could not load of application, due to missing json format");
     }
   }
 #if 0 // debug
   auto apps = net.GetApps();
   for (auto itr : apps) {
-    std::cout << "name: " << itr.first;
-    std::cout << ", args: " << itr.second.args << std::endl;
+    cout << "name: " << itr.first;
+    cout << ", args: " << itr.second.args << endl;
   }
 #endif
   } /* load app */

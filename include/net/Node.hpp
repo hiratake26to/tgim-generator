@@ -31,7 +31,7 @@ Author: hiratake26to@gmail.com
 
 struct Netif {
   std::string connect;
-  std::string as;
+  std::vector<std::string> as;
 };
 
 /** @brief Node */
@@ -48,4 +48,5 @@ struct Node {
   int y;
   int z;
   operator std::string() const;
+  int getNetifIdxFromConnect(std::string) const;
 };

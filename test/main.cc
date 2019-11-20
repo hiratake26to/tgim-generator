@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     return 1;
   }
   if (vm.count("version")) {
-    cout << "Version: " << TMGR_VERSION << endl;
+    cout << "tgim-generator version " << TMGR_VERSION << endl;
     return 1;
   }
   if (vm.count("debug")) {
@@ -134,8 +134,8 @@ int main(int argc, char *argv[]) {
     cout << "==> Convert: " << file << endl;
     try {
       GenW::generate(file);
-    } catch(std::exception e) {
-      std::cerr << e.what() << std::endl;
+    } catch(const std::exception& e) {
+      std::cerr << "Exception: " << e.what() << std::endl;
       cout << "Convert failed" << std::endl;
       return -1;
     }

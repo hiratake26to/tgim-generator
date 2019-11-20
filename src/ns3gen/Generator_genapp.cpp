@@ -19,7 +19,6 @@ Author: hiratake26to@gmail.com
  */
 
 #include "ns3gen/Generator.hpp"
-#include "ns3gen/GenUtil.hpp"
 
 #include "net/Application.hpp"
 

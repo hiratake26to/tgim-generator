@@ -19,7 +19,6 @@ Author: hiratake26to@gmail.com
  */
 
 #include "ns3gen/Generator.hpp"
-#include "ns3gen/GenUtil.hpp"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/string.hpp>
@@ -53,7 +52,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   std::unordered_map<std::string, std::string> helper_name_map;
   helper_name_map["PointToPoint"] = "PointToPointHelper";
   helper_name_map["Csma"] = "CsmaHelper";
-  helper_name_map["Wifi"] = "WifiHelper";
+  helper_name_map["WifiAdhoc"] = "WifiHelper";
   helper_name_map["WifiApSta"] = "WifiHelper";
   for (const auto& item : m_channels) {
     const auto& ch_buf = item.second;
@@ -63,6 +62,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
       lines.push_back(helper_name_map[ch_buf.type]
                         + " " + ch_buf.name + ";");
     } else {
+      //[FIXME] handle exception, which Wifi node exists in channel!
       // if no user set channel.type
       if ( ch_buf.nodes.size() < 2 )
       {

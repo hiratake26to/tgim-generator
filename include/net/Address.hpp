@@ -13,15 +13,16 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file GenUtil.hpp
- * \brief Generator utility.
+ * \file Address.hpp
+ * \brief Network Address
  * \author hiratake26to@gmail
- * \date 2017
+ * \date 2019
  */
 
 #pragma once
 
-#include <string>
+#include "network-prvt.hpp"
+#include <optional>
 
 class AddressValue {
   uint32_t m_local;
@@ -29,22 +30,48 @@ class AddressValue {
   void parse_and_set(const std::string& value);
 public:
   AddressValue(const std::string& value);
-  std::string GetLocal();
-  std::string GetNetworkAddress();
-  std::string GetHost();
-  std::string GetMask();
+  AddressValue GetNext() const;
+  std::string GetLocal() const;
+  std::string GetNetworkAddress() const;
+  std::string GetHost() const;
+  std::string GetMask() const;
+  bool operator==(const AddressValue& value) const;
+};
+
+enum struct AddressType {
+  ChannelUnique,
+  NetworkUnique,
+  //GlobalUnique,
+};
+
+class AddrGenCell {
+  AddressValue base_addr_;
+  AddressValue addr_;
+  AddressType type_;
+public:
+  AddrGenCell(AddressValue base_addr, AddressType type);
+  AddressValue GetBase() const;
+  AddressValue GetLast() const;
+  AddressType GetType() const;
+  void Next();
 };
 
 class AddressGenerator {
+  static std::vector<AddrGenCell> gen_cell_list_;
+  static std::optional<std::reference_wrapper<AddrGenCell>> gen_cell_;
+  //static AddrGenCell temp;
+  static std::optional<std::reference_wrapper<AddrGenCell>> FindGenCell(AddressValue base_value);
+  static bool IsConsistent(AddrGenCell cell);
   // 10.0.0.0 ~ 10.255.255.255
-  static uint32_t address_net;
-  static uint32_t address_mask;
-  static uint32_t address_last;
+  //static uint32_t address_net;
+  //static uint32_t address_mask;
+  //static uint32_t address_last;
 public:
-  static void Init();
   static std::string GetLocal();
   static std::string GetNetworkAddress();
   static std::string GetHost();
   static std::string GetMask();
+  static void SetBase(AddressValue value, AddressType type);
+  static void SetDefault();
   static void Next();
 };

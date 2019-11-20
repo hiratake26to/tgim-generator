@@ -13,18 +13,21 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file GenUtil.cpp
+ * \file Address.cpp
  * \author hiratake26to@gmail
- * \date 2017
+ * \date 2019
  */
 
-#include "ns3gen/GenUtil.hpp"
+#include "net/Address.hpp"
 
 #include <iostream>
+#include <string>
 #include <boost/algorithm/string.hpp>
 #include <tao/pegtl.hpp>
+using std::string;
+using std::optional;
 
-static std::string toStrAddr(uint32_t addr) {
+static string toStrAddr(uint32_t addr) {
   uint8_t oct[4];
   // [0].[1].[2].[3]
   oct[0] = 0xFF & (addr >> 24);
@@ -32,7 +35,7 @@ static std::string toStrAddr(uint32_t addr) {
   oct[2] = 0xFF & (addr >>  8);
   oct[3] = 0xFF & (addr);
 
-  std::string str_addr
+  string str_addr
     = std::to_string(oct[0]) + "."
     + std::to_string(oct[1]) + "."
     + std::to_string(oct[2]) + "."
@@ -41,9 +44,9 @@ static std::string toStrAddr(uint32_t addr) {
   return str_addr;
 }
 
-static uint32_t toBinAddr(std::string s) {
+static uint32_t toBinAddr(string s) {
   uint32_t ret = 0;
-  std::string buf = "";
+  string buf = "";
   int i = 0;
   for (const char& c : s) {
     if (c >= '0' && c <= '9') buf += c;
@@ -63,6 +66,7 @@ static uint32_t toBinAddr(std::string s) {
 namespace pegtl = tao::pegtl;
 
 namespace Address {
+  using std::string;
   using namespace tao::pegtl;
 
   struct octet
@@ -127,7 +131,7 @@ namespace Address {
   struct action< local >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
+    static void apply( const Input& in, string& local, string& mask, bool &ok)
     {
       local = in.string();
     }
@@ -137,7 +141,7 @@ namespace Address {
   struct action< mask_cidr >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
+    static void apply( const Input& in, string& local, string& mask, bool &ok)
     {
       int n = std::stol(in.string());
       if (n > 32 || n < 0) {
@@ -153,7 +157,7 @@ namespace Address {
   struct action< mask >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
+    static void apply( const Input& in, string& local, string& mask, bool &ok)
     {
       mask = in.string();
     }
@@ -163,7 +167,7 @@ namespace Address {
   struct action< grammer >
   {
     template< typename Input >
-    static void apply( const Input& in, std::string& local, std::string& mask, bool &ok)
+    static void apply( const Input& in, string& local, string& mask, bool &ok)
     {
       ok = true;
     }
@@ -172,19 +176,19 @@ namespace Address {
 
 namespace {
   // netaddress : last local address
-  std::map<std::string, std::string> assign_address_list;
+  std::map<string, string> assign_address_list;
 }
 
 //
 // impl
 //
 
-void AddressValue::parse_and_set(const std::string& value) {
-  std::string local;
-  std::string mask;
+void AddressValue::parse_and_set(const string& value) {
+  string local;
+  string mask;
   bool ok = false;
   try {
-    std::string buff;
+    string buff;
     pegtl::string_input<> in(value, buff);
     pegtl::parse< Address::grammer, Address::action>( in, local, mask, ok );
     if (!ok) throw std::runtime_error("not ok");
@@ -208,47 +212,118 @@ void AddressValue::parse_and_set(const std::string& value) {
   m_mask = toBinAddr(mask);
 }
 
-AddressValue::AddressValue(const std::string& value) {
+AddressValue::AddressValue(const string& value) {
   parse_and_set(value);
 }
-std::string AddressValue::GetLocal() {
+// do not return, network/bloadcast address
+AddressValue AddressValue::GetNext() const {
+  AddressValue next = *this;
+  next.m_local += 1;
+  // check reach to bload cast address
+  if (next.m_local == ((next.m_local & next.m_mask) | ~next.m_mask)) {
+    throw std::runtime_error("Exception at AddressValue::GetNext , "
+        "could not increment address due to reach to broadcast address");
+  }
+  return next;
+}
+string AddressValue::GetLocal() const {
   return toStrAddr(m_local);
 }
-std::string AddressValue::GetNetworkAddress() {
+string AddressValue::GetNetworkAddress() const {
   return toStrAddr(m_local & m_mask);
 }
-std::string AddressValue::GetHost() {
+string AddressValue::GetHost() const {
   return toStrAddr(m_local & ~m_mask);
 }
-std::string AddressValue::GetMask() {
+string AddressValue::GetMask() const {
   return toStrAddr(m_mask);
 }
+bool AddressValue::operator==(const AddressValue& value) const {
+  if (m_local == value.m_local && m_mask == value.m_mask) return true;
+  return false;
+};
 
 //
 //
 //
 
-uint32_t AddressGenerator::address_net;
-uint32_t AddressGenerator::address_mask;
-uint32_t AddressGenerator::address_last;
+std::vector<AddrGenCell> AddressGenerator::gen_cell_list_;
+std::optional<std::reference_wrapper<AddrGenCell>> AddressGenerator::gen_cell_;
+//AddrGenCell AddressGenerator::temp(AddressValue("192.168.22.0/24"), AddressType::NetworkUnique);
 
-void AddressGenerator::Init() {
-  address_net   = 0xC0A80000;
-  address_mask  = 0xFFFFFF00;
-  address_last  = address_net + ~address_mask + 1;
+//uint32_t AddressGenerator::address_net;
+//uint32_t AddressGenerator::address_mask;
+//uint32_t AddressGenerator::address_last;
+
+//void AddressGenerator::Init() {
+//  address_net   = 0xC0A80000;
+//  address_mask  = 0xFFFFFF00;
+//  address_last  = address_net + ~address_mask + 1;
+//}
+string AddressGenerator::GetLocal() {
+  return gen_cell_.value().get().GetLast().GetLocal();
+  //return toStrAddr(address_last);
 }
-std::string AddressGenerator::GetLocal() {
-  return toStrAddr(address_last);
+string AddressGenerator::GetNetworkAddress() {
+  return gen_cell_.value().get().GetLast().GetNetworkAddress();
+  //return toStrAddr(address_net & address_mask);
 }
-std::string AddressGenerator::GetNetworkAddress() {
-  return toStrAddr(address_net & address_mask);
+string AddressGenerator::GetHost() {
+  return gen_cell_.value().get().GetLast().GetHost();
+  //return toStrAddr(address_net & ~address_mask);
 }
-std::string AddressGenerator::GetHost() {
-  return toStrAddr(address_net & ~address_mask);
+string AddressGenerator::GetMask() {
+  return gen_cell_.value().get().GetLast().GetMask();
+  //return toStrAddr(address_mask);
 }
-std::string AddressGenerator::GetMask() {
-  return toStrAddr(address_mask);
+// find cell that has same network address
+optional<std::reference_wrapper<AddrGenCell>> AddressGenerator::FindGenCell(AddressValue base_value) {
+  for (auto&& i : gen_cell_list_) {
+    if (i.GetBase().GetNetworkAddress() == base_value.GetNetworkAddress()) {
+      return i;
+    }
+  }
+  return {};
+}
+bool AddressGenerator::IsConsistent(AddrGenCell cell) {
+  AddressValue base = cell.GetBase();
+  AddressType type = cell.GetType();
+  const auto& result = FindGenCell(base);
+  if (result) {
+    if (result.value().get().GetType() != type) return false;
+  }
+  return true;
+}
+void AddressGenerator::SetBase(AddressValue value, AddressType type) {
+  AddrGenCell cell(value, type);
+  if (not IsConsistent(cell)) {
+    throw std::runtime_error("Exception at AddressGenerator::SetBase, could not set base address.\n"
+        "for same network address, must be specified different type");
+  }
+  auto&& result = FindGenCell(value);
+  if (not result) {
+    gen_cell_list_.push_back(cell);
+  }
+  gen_cell_ = FindGenCell(value);
 }
 void AddressGenerator::Next() {
-  address_last  = address_last + ~address_mask + 1;
+  gen_cell_.value().get().Next();
+  //address_last  = address_last + ~address_mask + 1;
+}
+void AddressGenerator::SetDefault() {
+  SetBase(AddressValue("10.0.0.0/8"), AddressType::NetworkUnique);
+}
+
+//
+
+AddrGenCell::AddrGenCell(AddressValue base_addr, AddressType type)
+: base_addr_(base_addr), addr_(base_addr), type_(type)
+{
+  // initialize
+}
+AddressValue AddrGenCell::GetBase() const { return base_addr_; }
+AddressValue AddrGenCell::GetLast() const { return addr_; }
+AddressType AddrGenCell::GetType() const { return type_; }
+void AddrGenCell::Next() {
+  addr_ = addr_.GetNext();
 }

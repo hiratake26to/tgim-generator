@@ -19,7 +19,6 @@ Author: hiratake26to@gmail.com
  */
 
 #include "ns3gen/Generator.hpp"
-#include "ns3gen/GenUtil.hpp"
 
 #include <boost/range/adaptor/indexed.hpp>
 #include <boost/algorithm/string.hpp>
@@ -46,9 +45,6 @@ NetworkGenerator::NetworkGenerator(Network net, const TemplateLoader& template_l
   // loader
   m_ns3template_loader = template_loader;
   m_ns3appmodel_loader = appmodel_loader;
-
-  // other init
-  AddressGenerator::Init();
 }
 
 std::vector<std::string> NetworkGenerator::CppCode() {

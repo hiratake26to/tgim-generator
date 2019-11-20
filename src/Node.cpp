@@ -25,3 +25,11 @@ Author: hiratake26to@gmail.com
 Node::operator std::string() const {
   return std::string() + "Node{" + name + "," + std::to_string(type) + "," + config + "}";
 }
+int Node::getNetifIdxFromConnect(std::string connect) const {
+  int i = 0;
+  for (const auto& netif : this->netifs) {
+    if (netif.connect == connect) return i;
+    ++i;
+  }
+  return -1;
+}
