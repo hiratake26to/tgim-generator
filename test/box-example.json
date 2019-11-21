@@ -23,9 +23,15 @@
     }
   },
   "channel": {
-    "_M_Br0_Pp0_Brs_Pp0": { "type": "Csma" },
-    "_M_Br0_Pp1_Bs0_Pp0": { "type": "Csma" },
-    "_M_Br1_Pp0_Brs_Pp1": { "type": "Csma" },
+    "_M_Br0_Pp0_Brs_Pp0": { "type": "Csma", "config": {
+      "Address": {"Base":"192.168.12.1/24", "Type":"ChannelUnique"}} 
+    },
+    "_M_Br0_Pp1_Bs0_Pp0": { "type": "Csma", "config": {
+      "Address": {"Base":"192.168.10.1/24", "Type":"NetworkUnique"}} 
+    },
+    "_M_Br1_Pp0_Brs_Pp1": { "type": "Csma", "config": {
+      "Address": {"Base":"11.0.0.1/8", "Type":"ChannelUnique"}} 
+    },
     "_M_Br1_Pp1_Bs0_Pp1": { "type": "Csma" }
   },
   "name": "TestNet",

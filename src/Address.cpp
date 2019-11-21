@@ -285,19 +285,19 @@ AddressAllocator::Alloc(size_t size, AddressType type, AddressValue base) {
 
   // validation
   if (not IsConsistent(cell)) {
-    throw std::runtime_error("Exception at AddressAllocator::SetBase, could not set base address.\n"
+    throw std::runtime_error("Exception at AddressAllocator::Alloc, could not set base address.\n"
         "for same network address, must be specified different type");
   }
 
   // check cache
   if (auto result = FindCell(base)) {
-    // reallocate
+    std::cout << "reallocate: " << base.GetNetworkAddress() << std::endl;
     auto&& ref_cell = result.value().get();
     auto ret = ref_cell;
     ref_cell = AddrAllocCell{ret.GetOffset()+size, size, type, base};
     return ret;
   } else {
-    // new allocate
+    std::cout << "new allocate: " << base.GetNetworkAddress() << std::endl;
     cell_list_.push_back( AddrAllocCell{0, size, type, base} );
     return Alloc(size, type, base);
   }
@@ -316,7 +316,14 @@ AddressAllocator::Alloc(size_t size, nlohmann::json config) {
   else if (config["Address"].is_object()) 
   {
     try {
-      string str_addr = config["Address"]["Base"].get<string>();
+      base = AddressValue{config["Address"]["Base"].get<string>()};
+      if (AddressValue{"10.0.0.1/8"} == base) {
+        throw std::runtime_error(
+            "error: `config.Address.Base` setting, address \"10.0.0.1/8\" could be specified,"
+            " because the generator uses it\n"
+            "please change base address to other address");
+      }
+
       string str_type = config["Address"]["Type"].get<string>();
       if (str_type == "ChannelUnique") {
         type = AddressType::ChannelUnique;
@@ -325,9 +332,11 @@ AddressAllocator::Alloc(size_t size, nlohmann::json config) {
       } else {
         throw std::runtime_error("`config.Address.Type` is invalid");
       }
+
     } catch (const std::exception& e) {
-      throw std::runtime_error("`config.Address` is invalid object");
+      throw std::runtime_error(string{}+"`config.Address` is invalid object\n"+e.what());
     }
+
   }
 
   return Alloc(size, type, base);
