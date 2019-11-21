@@ -102,7 +102,7 @@ void NetworkGenerator::gen_decl(CodeSecretary& lines) {
   lines.push_back(" ******************************************************/");
   // all nodes
   lines.push_back("// nodes");
-  lines.push_back("NodeContainer " + m_name_all_nodes + ";");
+  lines.push_back("NodeContainer " + m_name_node_container + ";");
   // netdevices
   for (const auto& item : m_channels) {
     const auto& channel = item.second;

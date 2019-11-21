@@ -81,9 +81,11 @@ void Network::AddChannel(std::string name, std::string type, std::string config)
   m_channels[name] = added;
 }
 
-void Network::AddApp(std::string name, std::string type, const std::map<std::string, std::string>& args)
+void Network::AddApp(
+    std::string name, std::string type, const std::map<std::string, std::string>& args,
+    std::string install, std::vector<std::string> nodes, std::vector<std::string> channels )
 {
-  Application added { name, type, args };
+  Application added { name, type, args, install, nodes, channels };
   m_apps[name] = added;
 }
 

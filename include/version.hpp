@@ -1,2 +1,2 @@
 #pragma once
-#define TMGR_VERSION "1.0.3"
+#define TMGR_VERSION "1.0.4_dev"

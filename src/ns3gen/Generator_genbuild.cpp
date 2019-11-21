@@ -268,7 +268,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     lines.push_back("{ // - " + node.name);
     lines.indentRight();
 
-    lines.push_back(m_name_all_nodes
+    lines.push_back(m_name_node_container
                   + ".Add("
                   + added
                   + ");");
@@ -304,7 +304,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     const auto& node = elem.value().second;
     const auto& i = std::to_string(elem.index());
     lines.push_back(node.name + " = "
-                  + m_name_all_nodes + ".Get(" + i + ");");
+                  + m_name_node_container + ".Get(" + i + ");");
   }
   */
 
@@ -336,9 +336,9 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
 			}
       lines.push_back( m_netdevs[channel.name] + " = "
                         + channel.name + ".Install("
-                        + m_name_all_nodes + ".Get(" + channel.nodes[0].name + ")"
+                        + m_name_node_container + ".Get(" + channel.nodes[0].name + ")"
                         + ","
-                        + m_name_all_nodes + ".Get(" + channel.nodes[1].name + ")"
+                        + m_name_node_container + ".Get(" + channel.nodes[1].name + ")"
                       + ");" );
       lines.indentLeft();
       lines.push_back( "}" );
@@ -352,7 +352,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       // add node
       for (const auto& node : channel.nodes) {
         lines.push_back( "nc_local.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
+                        + m_name_node_container + ".Get(" + node.name + ")"
                         + ");" );
       }
       // connect csma
@@ -370,7 +370,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       // add node
       for (const auto& node : channel.nodes) {
         lines.push_back( "nc_local.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
+                        + m_name_node_container + ".Get(" + node.name + ")"
                         + ");" );
       }
       // connect Wifi
@@ -393,7 +393,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
         if (findRole(node, nif_id, {"Ap"})) {
           // [TODO] check that add just one AP node.
           lines.push_back( "nc_local_ap.Add("
-                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + m_name_node_container + ".Get(" + node.name + ")"
                           + ");" );
         }
       }
@@ -403,7 +403,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
         if (nif_id == -1) throw std::runtime_error("no found index");
         if (findRole(node, nif_id, {"Sta"})) {
           lines.push_back( "nc_local_stas.Add("
-                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + m_name_node_container + ".Get(" + node.name + ")"
                           + ");" );
         }
       }
@@ -489,7 +489,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
     const auto& node = item.second;
     if (node.type == NODE_T_IFACE) continue; // already installed in subnet build
     lines.push_back("stack.Install("
-                      + m_name_all_nodes + ".Get(" + node.name + ")"
+                      + m_name_node_container + ".Get(" + node.name + ")"
                       + ");" );
   }
 
@@ -517,45 +517,14 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
 			lines.push_back("// config is empty");
       continue;
 		}
+
     // parse channel configuration
-    jconf = json::parse(ch.config);
-    if (jconf["Address"].is_string()) {
-      AddressGenerator::SetBase(
-          jconf["Address"].get<string>(),
-          AddressType::ChannelUnique);
-    } else if (jconf["Address"].is_object()) {
-      try {
-        string str_addr = jconf["Address"]["Base"].get<string>();
-        string str_type = jconf["Address"]["Type"].get<string>();
-        if (str_type == "ChannelUnique") {
-          AddressGenerator::SetBase(str_addr, AddressType::ChannelUnique);
-        } else if (str_type == "NetworkUnique") {
-          AddressGenerator::SetBase(str_addr, AddressType::NetworkUnique);
-        } else {
-          throw std::runtime_error(
-              string{} +
-              "configuration at `channel." + 
-              ch.name +
-              ".config.Address.Type` is invalid");
-        }
-      } catch (const std::exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-        throw std::runtime_error(
-            string{} +
-            "configuration at `channel." + 
-            ch.name +
-            ".config.Address` is invalid object");
-      }
-    } else {
-			lines.push_back("// auto set address");
-      AddressGenerator::SetDefault();
-    }
-    // calc address
-    AddressGenerator::Next();
-    string netaddr = AddressGenerator::GetNetworkAddress();
-    string mask = AddressGenerator::GetMask();
-    string base_host = AddressGenerator::GetHost();
+    AddrAllocCell addrs = AddressAllocator::Alloc( ch.nodes.size(), json::parse(ch.config) );
+
     // set base
+    string netaddr   = addrs.GetBase().GetNetworkAddress();
+    string mask      = addrs.GetBase().GetMask();
+    string base_host = addrs.At(0).GetHost();
     lines.push_back( (string)"ip.SetBase ("
                       + "\"" + netaddr + "\""
                       + ","

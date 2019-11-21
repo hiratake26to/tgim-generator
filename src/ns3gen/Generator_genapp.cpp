@@ -24,6 +24,7 @@ Author: hiratake26to@gmail.com
 
 #include "loader/AppModelLoader.hpp"
 
+#include <numeric>
 #include <boost/algorithm/string/join.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
@@ -34,6 +35,7 @@ using json = nlohmann::json;
 
 ///
 #include <tao/pegtl.hpp>
+#define RANGE(a) a.begin(), a.end()
 
 namespace pegtl = tao::pegtl;
 
@@ -61,7 +63,7 @@ namespace argument {
   {
     template< typename Input >
     static void apply( const Input& in, std::string& result,
-      const std::string& all_nodes,
+      const std::string& node_container,
       const std::map<std::string, Node>& nodes )
     {
       result += (in.string());
@@ -73,11 +75,11 @@ namespace argument {
   {
     template< typename Input >
     static void apply( const Input& in, std::string& result,
-      const std::string& all_nodes,
+      const std::string& node_container,
       const std::map<std::string, Node>& nodes )
     {
       if ( nodes.count(in.string()) ) {
-        result += (all_nodes + ".Get(" + nodes.at(in.string()).name + ")");
+        result += (node_container + ".Get(" + nodes.at(in.string()).name + ")");
       } else {
         throw std::runtime_error("not found the node of name '" + in.string() + "'");
       }
@@ -89,7 +91,7 @@ namespace argument {
   {
     template< typename Input >
     static void apply( const Input& in, std::string& result,
-      const std::string& all_nodes,
+      const std::string& node_container,
       const std::map<std::string, Node>& nodes )
     {
     }
@@ -100,13 +102,13 @@ namespace argument {
 namespace {
   std::string resolveHolder(
       const std::string& str,
-      const std::string& all_nodes,
+      const std::string& node_container,
       const std::map<std::string, Node>& nodes
   ){
     std::string ret;
     std::string buff;
     pegtl::string_input<> in(str, buff);
-    pegtl::parse< argument::grammer, argument::action>( in, ret, all_nodes, nodes );
+    pegtl::parse< argument::grammer, argument::action>( in, ret, node_container, nodes );
     if (ret != str) {
       boost::trim_if (ret, boost::is_any_of("\"") );
     }
@@ -117,7 +119,7 @@ namespace {
       const AppModelLoader& loader,
       const std::string& instance_name,
       const Application& app,
-      const std::string& all_nodes,
+      const std::string& node_container,
       const std::map<std::string, Node>& nodes
   ){
     // load application model
@@ -137,7 +139,23 @@ namespace {
       lines.push_back( (boost::format(R"(%1%.Set_%2%(%3%);)")
             % instance_name
             % it.key()
-            % resolveHolder( app.args.at(it.key()), all_nodes, nodes ) // TODO: impl, generator replace literals.
+            % resolveHolder( app.args.at(it.key()), node_container, nodes ) // TODO: impl, generator replace literals.
+            ).str() );
+    }
+  }
+  void expandParams2(
+      CodeSecretary& lines,
+      const std::string& instance_name,
+      const Application& app,
+      const std::string& node_container,
+      const std::map<std::string, Node>& nodes
+  ){
+
+    for (const auto& key_and_val : app.args) {
+      lines.push_back( (boost::format(R"(%1%.Set_%2%(%3%);)")
+            % instance_name
+            % key_and_val.first
+            % resolveHolder( key_and_val.second, node_container, nodes ) // TODO: impl, generator replace literals.
             ).str() );
     }
   }
@@ -163,9 +181,13 @@ setMyTcpApp(Ptr<Node> n, int nport, Ptr<Node> m, int mport, int sim_start, int s
     lines.push_back("{");
     lines.indentRight();
       std::string instance_name = "__tgim_app_" + app.type;
-      lines.push_back( "tgim::app::" + app.type + " " + instance_name + ";");
-      expandParams(lines, m_ns3appmodel_loader, instance_name, app , m_name_all_nodes, m_nodes);
-      lines.push_back( instance_name + ".install();" );
+      lines.push_back( "tgim::app::" + app.type + " " + instance_name
+          + "(\"" + instance_name + "\");");
+
+      expandParams2(lines, instance_name, app , m_name_node_container, m_nodes);
+      lines.push_back( instance_name + ".Install("
+          + m_name_node_container + ".Get(" + app.install + ")"
+          +");" );
     lines.indentLeft();
     lines.push_back("}");
   }
@@ -175,7 +197,7 @@ setMyTcpApp(Ptr<Node> n, int nport, Ptr<Node> m, int mport, int sim_start, int s
     const auto& node = item.second;
     if (node.type == NODE_T_IFACE) continue; // already installed in subnet build
     lines.push_back("stack.Install("
-                      + this->name_all_nodes + ".Get(" + node.name + ")"
+                      + this->m_name_node_container + ".Get(" + node.name + ")"
                       + ");" );
   }
 #endif

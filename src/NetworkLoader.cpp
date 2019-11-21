@@ -212,8 +212,11 @@ Network NetworkLoader::load(string filename) {
         //cout << "arg load: " << it.key() << ":" << it.value().dump() << endl;
         args[it.key()] = it.value().dump();
       }
+      string install = it.value()["install"];
+      vector<string> nodes = it.value()["nodes"];
+      vector<string> channels = it.value()["channels"];
 
-      net.AddApp(name, type, args);
+      net.AddApp(name, type, args, install, nodes, channels);
 
     } catch (const std::exception& e) {
       cerr << e.what() << endl;

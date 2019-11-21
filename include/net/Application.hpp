@@ -30,4 +30,8 @@ struct Application {
   std::string type;
   // <"name", "value">
   std::map<std::string, std::string> args;
+
+  std::string install;
+  std::vector<std::string> nodes;
+  std::vector<std::string> channels;
 };

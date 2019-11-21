@@ -26,23 +26,27 @@
 
   "node" : {
     "X" : {
+      "point": {"x": 0, "y": 0},
       "netifs" : [
         { "connect" : "link_0", "config": {"Address": "auto"} }
       ]
     },
     "Y" : {
+      "point": {"x": 10, "y": 0},
       "netifs" : [
         { "connect" : "link_0", "config": {"Address": "auto"} },
         { "connect" : "link_1", "config": {"Address": "auto"} }
       ]
     },
     "Z" : {
+      "point": {"x": 20, "y": 0},
       "netifs" : [
         { "connect" : "link_1", "config": {"Address": "auto"} },
         { "connect" : "link_2", "config": {"Address": "auto"} }
       ]
     },
     "W" : {
+      "point": {"x": 30, "y": 0},
       "netifs" : [
         { "connect" : "link_2", "config": {"Address": "auto"} }
       ]

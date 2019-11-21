@@ -1,0 +1,63 @@
+{
+  "apps": {
+    "_Brs_T0": {
+      "install": "_Brs_Nn0",
+      "type": "NicCtl",
+      "args": { "enable": false, "idx": 1, "start": 15 },
+      "nodes": [ "_Brs_Nn0" ],
+      "channels": [ "_Brs_Cc0", "_Brs_Cc1" ]
+    },
+    "_Brs_T1": {
+      "install": "_Brs_Nn0",
+      "type": "Ping",
+      "args": { "dhost": "${_Bs0_Nn0}", "dport": 8080, "start": 5 },
+      "nodes": [ "_Bs0_Nn0" ],
+      "channels": [ "_Bs0_Cc0", "_Bs0_Cc1" ]
+    },
+    "_Bs0_T0": {
+      "install": "_Bs0_Nn0",
+      "type": "Sink",
+      "args": { "port": 8080, "start": 5, "time": 30 },
+      "nodes": [ "_Bs0_Nn0" ],
+      "channels": [ "_Bs0_Cc0", "_Bs0_Cc1" ]
+    }
+  },
+  "channel": {
+    "_M_Br0_Pp0_Brs_Pp0": { "type": "Csma" },
+    "_M_Br0_Pp1_Bs0_Pp0": { "type": "Csma" },
+    "_M_Br1_Pp0_Brs_Pp1": { "type": "Csma" },
+    "_M_Br1_Pp1_Bs0_Pp1": { "type": "Csma" }
+  },
+  "name": "TestNet",
+  "node": {
+    "_Br0_Nn0": {
+      "netifs": [
+        { "connect": "_M_Br0_Pp0_Brs_Pp0" },
+        { "connect": "_M_Br0_Pp1_Bs0_Pp0" }
+      ],
+      "point": { "x": 0, "y": 0 }
+    },
+    "_Br1_Nn0": {
+      "netifs": [
+        { "connect": "_M_Br1_Pp0_Brs_Pp1" },
+        { "connect": "_M_Br1_Pp1_Bs0_Pp1" }
+      ],
+      "point": { "x": 0, "y": 0 }
+    },
+    "_Brs_Nn0": {
+      "netifs": [
+        { "connect": "_M_Br0_Pp0_Brs_Pp0" },
+        { "connect": "_M_Br1_Pp0_Brs_Pp1" }
+      ],
+      "point": { "x": 0, "y": 0 }
+    },
+    "_Bs0_Nn0": {
+      "netifs": [
+        { "connect": "_M_Br0_Pp1_Bs0_Pp0" },
+        { "connect": "_M_Br1_Pp1_Bs0_Pp1" }
+      ],
+      "point": { "x": 0, "y": 0 }
+    }
+  },
+  "subnet": null
+}

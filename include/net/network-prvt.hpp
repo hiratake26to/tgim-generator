@@ -26,3 +26,4 @@ Author: hiratake26to@gmail.com
 #include <string>
 #include <utility>
 #include <vector>
+#include <list>

@@ -24,6 +24,8 @@ Author: hiratake26to@gmail.com
 #include "network-prvt.hpp"
 #include <optional>
 
+#include <json.hpp>
+
 class AddressValue {
   uint32_t m_local;
   uint32_t m_mask;
@@ -44,34 +46,33 @@ enum struct AddressType {
   //GlobalUnique,
 };
 
-class AddrGenCell {
-  AddressValue base_addr_;
-  AddressValue addr_;
-  AddressType type_;
+class AddrAllocCell {
+  size_t offset_;
+  size_t size_;
+  AddressType addr_type_;
+  AddressValue addr_base_;
 public:
-  AddrGenCell(AddressValue base_addr, AddressType type);
-  AddressValue GetBase() const;
-  AddressValue GetLast() const;
+  AddrAllocCell(size_t offset, size_t size, AddressType type, AddressValue base);
+  size_t GetOffset() const ;
+  size_t GetSize() const ;
   AddressType GetType() const;
-  void Next();
+  AddressValue GetBase() const;
+  AddressValue At(size_t idx) const;
 };
 
-class AddressGenerator {
-  static std::vector<AddrGenCell> gen_cell_list_;
-  static std::optional<std::reference_wrapper<AddrGenCell>> gen_cell_;
-  //static AddrGenCell temp;
-  static std::optional<std::reference_wrapper<AddrGenCell>> FindGenCell(AddressValue base_value);
-  static bool IsConsistent(AddrGenCell cell);
-  // 10.0.0.0 ~ 10.255.255.255
-  //static uint32_t address_net;
-  //static uint32_t address_mask;
-  //static uint32_t address_last;
+// 10.0.0.0 ~ 10.255.255.255
+class AddressAllocator {
+  /// now allocated cell list
+  static std::list<AddrAllocCell> cell_list_;
+  /// find the cell, return reference
+  static std::optional<std::reference_wrapper<AddrAllocCell>> FindCell(AddressValue base_addr);
+  /// check address
+  static bool IsConsistent(AddrAllocCell cell);
 public:
-  static std::string GetLocal();
-  static std::string GetNetworkAddress();
-  static std::string GetHost();
-  static std::string GetMask();
-  static void SetBase(AddressValue value, AddressType type);
-  static void SetDefault();
-  static void Next();
+  /// allocate a AddressCell
+  static AddrAllocCell Alloc(size_t size,
+      AddressType type = AddressType::NetworkUnique, AddressValue base = AddressValue("10.0.0.0/8"));
+  /// 
+  // config: channel config
+  static AddrAllocCell Alloc(size_t size, nlohmann::json config);
 };

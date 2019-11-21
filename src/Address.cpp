@@ -179,10 +179,8 @@ namespace {
   std::map<string, string> assign_address_list;
 }
 
-//
-// impl
-//
-
+//////////////////////////////////////////////////
+/// AddressValue
 void AddressValue::parse_and_set(const string& value) {
   string local;
   string mask;
@@ -217,6 +215,7 @@ AddressValue::AddressValue(const string& value) {
 }
 // do not return, network/bloadcast address
 AddressValue AddressValue::GetNext() const {
+  std::cout << "[DEBUG] " << GetLocal() << std::endl;
   AddressValue next = *this;
   next.m_local += 1;
   // check reach to bload cast address
@@ -247,83 +246,116 @@ bool AddressValue::operator==(const AddressValue& value) const {
 //
 //
 
-std::vector<AddrGenCell> AddressGenerator::gen_cell_list_;
-std::optional<std::reference_wrapper<AddrGenCell>> AddressGenerator::gen_cell_;
-//AddrGenCell AddressGenerator::temp(AddressValue("192.168.22.0/24"), AddressType::NetworkUnique);
+//////////////////////////////////////////////////
+/// AddressAllocator
+std::list<AddrAllocCell> AddressAllocator::cell_list_;
 
-//uint32_t AddressGenerator::address_net;
-//uint32_t AddressGenerator::address_mask;
-//uint32_t AddressGenerator::address_last;
-
-//void AddressGenerator::Init() {
+//void AddressAllocator::SetDefault() {
+//  SetBase(AddressValue("10.0.0.0/8"), AddressType::NetworkUnique);
+//}
+//void AddressAllocator::Init() {
 //  address_net   = 0xC0A80000;
 //  address_mask  = 0xFFFFFF00;
 //  address_last  = address_net + ~address_mask + 1;
 //}
-string AddressGenerator::GetLocal() {
-  return gen_cell_.value().get().GetLast().GetLocal();
-  //return toStrAddr(address_last);
-}
-string AddressGenerator::GetNetworkAddress() {
-  return gen_cell_.value().get().GetLast().GetNetworkAddress();
-  //return toStrAddr(address_net & address_mask);
-}
-string AddressGenerator::GetHost() {
-  return gen_cell_.value().get().GetLast().GetHost();
-  //return toStrAddr(address_net & ~address_mask);
-}
-string AddressGenerator::GetMask() {
-  return gen_cell_.value().get().GetLast().GetMask();
-  //return toStrAddr(address_mask);
-}
-// find cell that has same network address
-optional<std::reference_wrapper<AddrGenCell>> AddressGenerator::FindGenCell(AddressValue base_value) {
-  for (auto&& i : gen_cell_list_) {
-    if (i.GetBase().GetNetworkAddress() == base_value.GetNetworkAddress()) {
+
+// find cell that has same network-address(base-address)
+optional<std::reference_wrapper<AddrAllocCell>>
+AddressAllocator::FindCell(AddressValue base_addr) {
+  for (auto&& i : cell_list_) {
+    if (i.GetBase().GetNetworkAddress() == base_addr.GetNetworkAddress()) {
       return i;
     }
   }
   return {};
 }
-bool AddressGenerator::IsConsistent(AddrGenCell cell) {
+
+bool AddressAllocator::IsConsistent(AddrAllocCell cell) {
   AddressValue base = cell.GetBase();
   AddressType type = cell.GetType();
-  const auto& result = FindGenCell(base);
-  if (result) {
+  if (const auto& result = FindCell(base)) {
     if (result.value().get().GetType() != type) return false;
   }
   return true;
 }
-void AddressGenerator::SetBase(AddressValue value, AddressType type) {
-  AddrGenCell cell(value, type);
+
+AddrAllocCell
+AddressAllocator::Alloc(size_t size, AddressType type, AddressValue base) {
+  AddrAllocCell cell(0, size, type, base);
+
+  // validation
   if (not IsConsistent(cell)) {
-    throw std::runtime_error("Exception at AddressGenerator::SetBase, could not set base address.\n"
+    throw std::runtime_error("Exception at AddressAllocator::SetBase, could not set base address.\n"
         "for same network address, must be specified different type");
   }
-  auto&& result = FindGenCell(value);
-  if (not result) {
-    gen_cell_list_.push_back(cell);
+
+  // check cache
+  if (auto result = FindCell(base)) {
+    // reallocate
+    auto&& ref_cell = result.value().get();
+    auto ret = ref_cell;
+    ref_cell = AddrAllocCell{ret.GetOffset()+size, size, type, base};
+    return ret;
+  } else {
+    // new allocate
+    cell_list_.push_back( AddrAllocCell{0, size, type, base} );
+    return Alloc(size, type, base);
   }
-  gen_cell_ = FindGenCell(value);
+
 }
-void AddressGenerator::Next() {
-  gen_cell_.value().get().Next();
-  //address_last  = address_last + ~address_mask + 1;
-}
-void AddressGenerator::SetDefault() {
-  SetBase(AddressValue("10.0.0.0/8"), AddressType::NetworkUnique);
+AddrAllocCell
+AddressAllocator::Alloc(size_t size, nlohmann::json config) {
+  auto type = AddressType::NetworkUnique;
+  auto base = AddressValue{"10.0.0.1/8"};
+
+  if (config["Address"].is_string())
+  {
+    type = AddressType::ChannelUnique;
+    base = config["Address"].get<string>();
+  }
+  else if (config["Address"].is_object()) 
+  {
+    try {
+      string str_addr = config["Address"]["Base"].get<string>();
+      string str_type = config["Address"]["Type"].get<string>();
+      if (str_type == "ChannelUnique") {
+        type = AddressType::ChannelUnique;
+      } else if (str_type == "NetworkUnique") {
+        type = AddressType::NetworkUnique;
+      } else {
+        throw std::runtime_error("`config.Address.Type` is invalid");
+      }
+    } catch (const std::exception& e) {
+      throw std::runtime_error("`config.Address` is invalid object");
+    }
+  }
+
+  return Alloc(size, type, base);
 }
 
-//
-
-AddrGenCell::AddrGenCell(AddressValue base_addr, AddressType type)
-: base_addr_(base_addr), addr_(base_addr), type_(type)
+//////////////////////////////////////////////////
+/// AddrAllocCell
+AddrAllocCell::AddrAllocCell(size_t offset, size_t size, AddressType type, AddressValue base)
+: offset_(offset), size_(size), addr_type_(type), addr_base_(base) 
 {
   // initialize
 }
-AddressValue AddrGenCell::GetBase() const { return base_addr_; }
-AddressValue AddrGenCell::GetLast() const { return addr_; }
-AddressType AddrGenCell::GetType() const { return type_; }
-void AddrGenCell::Next() {
-  addr_ = addr_.GetNext();
+size_t AddrAllocCell::GetOffset() const {
+  return offset_;
+}
+size_t AddrAllocCell::GetSize() const {
+  return size_;
+}
+AddressValue AddrAllocCell::GetBase() const {
+  return addr_base_; 
+}
+AddressType AddrAllocCell::GetType() const {
+  return addr_type_; 
+}
+AddressValue AddrAllocCell::At(size_t idx) const {
+  AddressValue ret = addr_base_;
+  for (size_t i = 0; i < (offset_+idx); ++i) {
+    ret = ret.GetNext();
+  }
+  return ret;
 }

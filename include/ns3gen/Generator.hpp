@@ -44,7 +44,7 @@ class NetworkGenerator {
   std::string m_name;
   std::string m_name_build_func = "build";
   std::string m_name_app_func = "app";
-  std::string m_name_all_nodes = "nodes";
+  std::string m_name_node_container = "nodes";
   // type
   int m_net_type;
   // node
