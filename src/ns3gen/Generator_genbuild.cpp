@@ -288,9 +288,9 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       lines.push_back("// Install mobility");
       lines.push_back("installMobility(nodes.Get("+node.name+"));");
       lines.push_back("allocateFixedPos(nodes.Get("+node.name+"), "
-          + std::to_string(node.x) + ", "
-          + std::to_string(node.y) + ", "
-          + std::to_string(node.z) + ");");
+          + std::to_string(node.point.x) + ", "
+          + std::to_string(node.point.y) + ", "
+          + std::to_string(node.point.z) + ");");
     }
 
     lines.indentLeft();

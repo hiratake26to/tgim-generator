@@ -41,21 +41,21 @@
         { "connect": "_M_Br0_Pp0_Brs_Pp0" },
         { "connect": "_M_Br0_Pp1_Bs0_Pp0" }
       ],
-      "point": { "x": 0, "y": 0 }
+      "point": { "x": 0.1, "y": 0 }
     },
     "_Br1_Nn0": {
       "netifs": [
         { "connect": "_M_Br1_Pp0_Brs_Pp1" },
         { "connect": "_M_Br1_Pp1_Bs0_Pp1" }
       ],
-      "point": { "x": 0, "y": 0 }
+      "point": { "x": 0.4, "y": 0 }
     },
     "_Brs_Nn0": {
       "netifs": [
         { "connect": "_M_Br0_Pp0_Brs_Pp0" },
         { "connect": "_M_Br1_Pp0_Brs_Pp1" }
       ],
-      "point": { "x": 0, "y": 0 }
+      "point": { "x": 0.3, "y": 0 }
     },
     "_Bs0_Nn0": {
       "netifs": [

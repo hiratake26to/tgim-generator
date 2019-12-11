@@ -63,9 +63,9 @@ void Network::AddNode(std::string name, std::string type, const std::vector<Neti
     added.type = NODE_T_BASIC;
   }
   added.netifs = netifs;
-  added.x = vec.x;
-  added.y = vec.y;
-  added.z = vec.z;
+  added.point.x = vec.x;
+  added.point.y = vec.y;
+  added.point.z = vec.z;
   m_nodes[name] = added;
 }
 

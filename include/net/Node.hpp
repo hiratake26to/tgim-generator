@@ -44,9 +44,7 @@ struct Node {
   std::string subnet_name;  // name as subnet instance
   std::string subnet_class; // subnet class name
   std::string subnet_node_id; // id for subnet class
-  int x;
-  int y;
-  int z;
+  Vector3D point;
   operator std::string() const;
   int getNetifIdxFromConnect(std::string) const;
 };

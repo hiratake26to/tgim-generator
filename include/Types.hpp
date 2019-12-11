@@ -1,7 +1,7 @@
 #pragma once
 
 struct Vector3D {
-  int x;
-  int y;
-  int z;
+  double x;
+  double y;
+  double z;
 };
