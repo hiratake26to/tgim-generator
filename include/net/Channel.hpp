@@ -27,8 +27,10 @@ Author: hiratake26to@gmail.com
 struct Channel {
   std::string name;
   std::string type;
+  std::string tag;
   std::string config;
-  std::vector<Node> nodes;
+  //std::vector<Node> nodes;
+  std::vector<std::string> nodes;
   operator std::string() const;
 };
 

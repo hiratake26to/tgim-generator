@@ -77,7 +77,11 @@ void Network::AddSubnet(std::string name, const Network& subnet)
 
 void Network::AddChannel(std::string name, std::string type, std::string config)
 {
-  Channel added { name, type, config };
+  return AddChannel(name, type, "", config);
+}
+void Network::AddChannel(std::string name, std::string type, std::string tag, std::string config)
+{
+  Channel added { name, type, tag, config};
   m_channels[name] = added;
 }
 
@@ -95,7 +99,7 @@ void Network::ConnectChannel(std::string ch_name, Node node)
   if (m_channels[ch_name].name != ch_name) {
     AddChannel(ch_name, "UNDEFINED", "");
   }
-  m_channels[ch_name].nodes.push_back(node);
+  m_channels[ch_name].nodes.push_back(node.name);
 }
 
 Node Network::UpIface(std::string subnet_name, std::string iface_name)
@@ -172,7 +176,7 @@ void Network::DumpJson()
   for (const auto& item : m_channels) {
     const auto& channel = item.second;
     std::vector<std::string> ch_nodes;
-    for (int i = 0; i < channel.nodes.size(); ++i) ch_nodes.push_back(channel.nodes[i].name);
+    for (int i = 0; i < channel.nodes.size(); ++i) ch_nodes.push_back(channel.nodes[i]);
     s.update((std::string)"channel."+channel.name, "nodes", ch_nodes ) ;
     s.update((std::string)"channel."+channel.name, "conf", channel.config ) ;
   }

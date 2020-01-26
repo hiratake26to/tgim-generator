@@ -56,6 +56,7 @@ public:
   void AddNode(std::string name, std::string type, const std::vector<Netif>& netifs, Vector3D vec, std::string config);
   void AddSubnet(std::string name, const Network& subnet);
   void AddChannel(std::string name, std::string type, std::string config);
+  void AddChannel(std::string name, std::string type, std::string tag, std::string config);
   void AddApp( std::string name, std::string type, const std::map<std::string, std::string>& args,
     std::string install, std::vector<std::string> nodes, std::vector<std::string> channels );
 

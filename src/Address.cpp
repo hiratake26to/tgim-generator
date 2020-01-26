@@ -214,14 +214,27 @@ AddressValue::AddressValue(const string& value) {
   parse_and_set(value);
 }
 // do not return, network/bloadcast address
-AddressValue AddressValue::GetNext() const {
-  std::cout << "[DEBUG] " << GetLocal() << std::endl;
+AddressValue AddressValue::GetNextHost() const {
+  //std::cout << "[DEBUG] AddressValue::GetNextHost, GetLocal=" << GetLocal() << std::endl;
   AddressValue next = *this;
   next.m_local += 1;
   // check reach to bload cast address
   if (next.m_local == ((next.m_local & next.m_mask) | ~next.m_mask)) {
-    throw std::runtime_error("Exception at AddressValue::GetNext , "
+    throw std::runtime_error("Exception at AddressValue::GetNextHost , "
         "could not increment address due to reach to broadcast address");
+  }
+  return next;
+}
+AddressValue AddressValue::GetNextNetwork() const {
+  //std::cout << "[DEBUG] AddressValue::GetNextNetwork, GetLocal=" << GetLocal() << std::endl;
+  AddressValue next = *this;
+  next.m_local += ~m_mask + 1;
+  next.m_local &= next.m_mask;
+  next.m_local += 1;
+  // check reach to upper limit
+  if (next.GetNetworkAddress() == "0.0.0.0") {
+    throw std::runtime_error("Exception at AddressValue::GetNextNetwork , "
+        "could not increment address due to reach to upper limit");
   }
   return next;
 }
@@ -306,8 +319,10 @@ AddressAllocator::Alloc(size_t size, AddressType type, AddressValue base) {
 AddrAllocCell
 AddressAllocator::Alloc(size_t size, nlohmann::json config) {
   auto type = AddressType::NetworkUnique;
-  auto base = AddressValue{"10.0.0.1/8"};
+  optional<AddressValue> base;
 
+  //std::cout << "[DEBUG] AddressAllocator::Alloc, config=" << config.dump() << std::endl;
+  // set base-address if it find on config
   if (config["Address"].is_string())
   {
     type = AddressType::ChannelUnique;
@@ -317,12 +332,12 @@ AddressAllocator::Alloc(size_t size, nlohmann::json config) {
   {
     try {
       base = AddressValue{config["Address"]["Base"].get<string>()};
-      if (AddressValue{"10.0.0.1/8"} == base) {
-        throw std::runtime_error(
-            "error: `config.Address.Base` setting, address \"10.0.0.1/8\" could be specified,"
-            " because the generator uses it\n"
-            "please change base address to other address");
-      }
+      //if (AddressValue{"10.0.0.1/8"} == base.value()) {
+      //  throw std::runtime_error(
+      //      "error: `config.Address.Base` setting, address \"10.0.0.1/8\" could be specified,"
+      //      " because the generator uses it\n"
+      //      "please change base address to other address");
+      //}
 
       string str_type = config["Address"]["Type"].get<string>();
       if (str_type == "ChannelUnique") {
@@ -339,7 +354,21 @@ AddressAllocator::Alloc(size_t size, nlohmann::json config) {
 
   }
 
-  return Alloc(size, type, base);
+  // auto config base-address(network address)
+  if (not base) {
+    //std::cout << "[DEBUG] AddressAllocator::Alloc, auto address" << std::endl;
+    base = AddressValue{"10.0.0.1/8"}; // the address where search starts
+    while (auto result = FindCell(base.value())) {
+      try {
+        base = base.value().GetNextNetwork();
+      } catch (const std::exception &e) {
+        std::cout << e.what() << std::endl;
+        throw std::runtime_error("Error at AddressAllocator::Alloc, due to no rest address to allocate");
+      }
+    }
+  }
+
+  return Alloc(size, type, base.value());
 }
 
 //////////////////////////////////////////////////
@@ -364,7 +393,7 @@ AddressType AddrAllocCell::GetType() const {
 AddressValue AddrAllocCell::At(size_t idx) const {
   AddressValue ret = addr_base_;
   for (size_t i = 0; i < (offset_+idx); ++i) {
-    ret = ret.GetNext();
+    ret = ret.GetNextHost();
   }
   return ret;
 }

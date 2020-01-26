@@ -1,0 +1,107 @@
+{
+  "apps": {
+    "_Bmb0_T0": {
+      "args": {
+        "dhost": "${_Bmb2_Nn0}",
+        "dport": 8080,
+        "start": 6
+      },
+      "channels": [
+        "_Bmb0_Cc0"
+      ],
+      "install": "_Bmb0_Nn0",
+      "nodes": [
+        "_Bmb0_Nn0"
+      ],
+      "type": "Ping"
+    },
+    "_Bmb2_T0": {
+      "args": {
+        "port": 8080,
+        "start": 5
+      },
+      "channels": [
+        "_Bmb2_Cc0"
+      ],
+      "install": "_Bmb2_Nn0",
+      "nodes": [
+        "_Bmb2_Nn0"
+      ],
+      "type": "Sink"
+    }
+  },
+  "channel": {
+    "_M_Bap_Pwport0_Bmb0_Pwport": {
+      "tag": "_Bap_Tc0",
+      "type": "WifiApSta"
+    },
+    "_M_Bap_Pwport1_Bmb1_Pwport": {
+      "tag": "_Bap_Tc0",
+      "type": "WifiApSta"
+    },
+    "_M_Bap_Pwport2_Bmb2_Pwport": {
+      "tag": "_Bap_Tc0",
+      "type": "WifiApSta"
+    }
+  },
+  "name": "network",
+  "node": {
+    "_Bap_Nn0": {
+      "netifs": [
+        {
+          "as": "Ap",
+          "connect": "_M_Bap_Pwport0_Bmb0_Pwport"
+        },
+        {
+          "as": "Ap",
+          "connect": "_M_Bap_Pwport1_Bmb1_Pwport"
+        },
+        {
+          "as": "Ap",
+          "connect": "_M_Bap_Pwport2_Bmb2_Pwport"
+        }
+      ],
+      "point": {
+        "x": 30.0,
+        "y": 10.0
+      }
+    },
+    "_Bmb0_Nn0": {
+      "netifs": [
+        {
+          "as": "Sta",
+          "connect": "_M_Bap_Pwport0_Bmb0_Pwport"
+        }
+      ],
+      "point": {
+        "x": 10.0,
+        "y": 20.0
+      }
+    },
+    "_Bmb1_Nn0": {
+      "netifs": [
+        {
+          "as": "Sta",
+          "connect": "_M_Bap_Pwport1_Bmb1_Pwport"
+        }
+      ],
+      "point": {
+        "x": 30.0,
+        "y": 20.0
+      }
+    },
+    "_Bmb2_Nn0": {
+      "netifs": [
+        {
+          "as": "Sta",
+          "connect": "_M_Bap_Pwport2_Bmb2_Pwport"
+        }
+      ],
+      "point": {
+        "x": 50.0,
+        "y": 20.0
+      }
+    }
+  },
+  "subnet": null
+}

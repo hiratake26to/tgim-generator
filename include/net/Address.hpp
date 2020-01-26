@@ -27,15 +27,35 @@ Author: hiratake26to@gmail.com
 #include <json.hpp>
 
 class AddressValue {
-  uint32_t m_local;
-  uint32_t m_mask;
+  using T = uint32_t;
+  T m_local;
+  T m_mask;
   void parse_and_set(const std::string& value);
 public:
   AddressValue(const std::string& value);
-  AddressValue GetNext() const;
+  /// 
+  // GetNext: return the address increased that its host-address
+  // note: do not return, network/bloadcast address
+  AddressValue GetNextHost() const;
+  /// 
+  // GetNextNetwork: return the address increased that its network-address
+  // note: the local-address is initialied that host address "0.0.0.1"
+  AddressValue GetNextNetwork() const;
+  ///
+  // GetLocal: return netmask
+  // e.g. "192.168.1.2/24" -> "192.168.1.2"
   std::string GetLocal() const;
+  ///
+  // GetMask: return netmask
+  // e.g. "192.168.1.2/24" -> "192.168.1.0"
   std::string GetNetworkAddress() const;
+  ///
+  // GetHost: return part of host
+  // e.g. "192.168.1.2/24" -> "0.0.0.2"
   std::string GetHost() const;
+  ///
+  // GetMask: return netmask
+  // e.g. "192.168.1.2/24" -> "255.255.255.0"
   std::string GetMask() const;
   bool operator==(const AddressValue& value) const;
 };

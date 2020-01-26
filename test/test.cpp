@@ -4,7 +4,8 @@ void eval_test() {
 #if 1
   NetworkLoader loader;
   //Network net = loader.load("./test/config.json");
-  Network net = loader.load("./test/box-example.json");
+  //Network net = loader.load("./test/box-example.json");
+  Network net = loader.load("./test/box-wifi-example.json");
   net.DumpJson();
   TemplateLoader tloader;
   tloader.setPath("./resource/ns3template-cxx.json");

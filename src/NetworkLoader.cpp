@@ -24,9 +24,11 @@ Author: hiratake26to@gmail.com
 #include <iostream>
 #include <json.hpp>
 #include <algorithm>
+#include <set>
 
 using std::string;
 using std::vector;
+using std::map;
 using std::cout;
 using std::cerr;
 using std::endl;
@@ -36,6 +38,144 @@ using std::accumulate;
 
 namespace {
   using json = nlohmann::json;
+
+  // TODO preprocess for channel tag
+  void pre_channel_tag(json& j) {
+    std::cout << "[generator] preprocess ..." << std::endl;
+    // tag -> [channel]
+    std::map<std::string, std::vector<std::string>> dict_tag_ch;
+    // channel -> body // tag only
+    std::map<std::string, json> dict_ch_body;
+    for (auto& [key, value] : j["channel"].items()) {
+
+      if (value["tag"].is_string()) {
+        std::cout << "tag!!" << value["tag"] << std::endl;
+        dict_ch_body[key] = value;
+        dict_tag_ch[value["tag"]].push_back(key);
+      } else if (value["tag"].is_null()){
+        // nothing
+      } else {
+        throw std::runtime_error("channel tag is invalid, tag must be string type");
+      }
+    }
+
+    // check tag channels
+    for (const auto& item : dict_tag_ch) {
+      auto tag       = item.first;
+      auto&& ch_list = item.second;
+
+      bool begin = true;
+      json last;
+      bool ok = true;
+      for (auto&& ch : ch_list) {
+        if (begin) {
+          last = dict_ch_body[ch];
+          begin = false;
+        } else {
+          ok = (last == dict_ch_body[ch]);
+          last = dict_ch_body[ch];
+          if (not ok) break;
+        }
+      }
+
+      if (not ok) {
+        std::string msg = std::string("invalid channel that tagged: ") + last.dump();
+        throw std::runtime_error(msg);
+      }
+    }
+
+    // append channel
+    for (auto&& item : dict_tag_ch) {
+      auto key = item.first;
+      auto&& value = item.second;
+      j["channel"][key] = dict_ch_body[value[0]];
+      j["channel"][key].erase("tag");
+    }
+    
+    // delete channel has tag
+    for (auto&& item : dict_ch_body) {
+      auto key = item.first;
+      //auto&& value = item.second;
+      j["channel"].erase(key);
+    }
+    
+    // replace to tag
+    for (auto& [node_key, node_value] : j["node"].items()) {
+      if (node_value["netifs"].is_array())
+      for (auto& [netif_idx, netif_value] : node_value["netifs"].items()) {
+        //std::cout << netif_idx << "->" << netif_value.dump() << std::endl;
+        if (netif_value["connect"].is_string()
+            and not dict_ch_body[netif_value["connect"]]["tag"].empty()) {
+          // replace to tag
+          netif_value["connect"] = dict_ch_body[netif_value["connect"]]["tag"];
+        }
+      }
+    }
+
+    // merge and delete node.netifs .connect 
+    for (auto& [node_key, node_value] : j["node"].items()) {
+      cout << "[preprocess] node: " << node_key << endl;
+      // map, connect -> [netif]
+      map<string, vector<json>> m;
+
+      if (node_value["netifs"].is_array())
+      for (auto& [netif_idx, netif_value] : node_value["netifs"].items()) {
+        cout << "[preprocess] netifs[" << netif_idx << "]: " << netif_value.dump() << endl;
+        if (netif_value["connect"].is_string()) {
+          m[netif_value["connect"]].push_back(netif_value);
+        }
+      }
+
+      // netifs that connect same channel have the same body
+      for (auto& it : m) {
+        auto& ifs = it.second;
+
+        auto to_vec = [](json a) -> vector<string> {
+          if (a.is_string()) return {a};
+          else if (a.is_array()) return a;
+          std::runtime_error("netifs[].as must be string or [string]");
+          return {};
+        };
+
+        auto role_fold = [](vector<string> a, vector<string> b) 
+          -> vector<string> {
+          std::set<string> ret;
+          ret.insert(a.begin(), a.end());
+          ret.insert(b.begin(), b.end());
+          return {ret.begin(), ret.end()};
+        };
+
+        auto netif_fold = [to_vec, role_fold](json a, json b){
+          if (a["connect"] != b["connect"]) 
+            throw std::logic_error("invalid connect! connect must be same channel");
+
+          auto ret = role_fold(to_vec(a["as"]), to_vec(b["as"]));
+          a["as"] = ret;
+          return a;
+        };
+
+        auto acc = std::accumulate(std::next(ifs.begin()), ifs.end(),
+            ifs[0], netif_fold);
+        ifs[0] = acc;
+      }
+      
+
+      // delete netifs
+      node_value["netifs"] = {};
+
+      // set netifs
+      // reduce vecor<json> -> json
+      for (const auto& it : m) {
+        cout << "- connect: " << it.second[0] << endl;
+        node_value["netifs"] += it.second[0];
+      }
+        
+    }
+
+    cout << "[generator] preprocess result:" << endl;
+    cout << j.dump(2) << endl;
+    
+  }
 
   json loadJson(string filename) {
     std::ifstream ifs(filename);
@@ -59,6 +199,7 @@ Network NetworkLoader::load(string filename) {
 
   string net_name;
   auto j = loadJson(filename);
+  pre_channel_tag(j);
   // get name
   {
     json jname = j["name"];
@@ -72,7 +213,13 @@ Network NetworkLoader::load(string filename) {
   json jch = j["channel"];
   for (auto it = jch.begin(); it != jch.end(); ++it) {
     //cout << it.key() << " : " << it.value() << endl;
-    net.AddChannel(it.key(), it.value()["type"], it.value()["config"].dump());
+    if (it.value()["tag"].is_string()) {
+      net.AddChannel(it.key(), it.value()["type"], it.value()["tag"], it.value()["config"].dump());
+    } else if (it.value()["tag"].is_null()){
+      net.AddChannel(it.key(), it.value()["type"], it.value()["config"].dump());
+    } else {
+      throw std::runtime_error("channel tag is invalid, tag must be string type");
+    }
   }
   } /* load ch */
 
