@@ -12,7 +12,7 @@ OBJS 	= main.o $(notdir $(patsubst %.cpp,%.o,$(SOURCES)))
 #DEBUG   = -g3 -O0
 CXX     = clang++
 CFLAGS  = -I./include $(DEBUG)
-CXXFLAGS  = -std=c++1z -I./include -I./thirdparty/include -I./thirdparty/PEGTL-2.2.0/include $(DEBUG)
+CXXFLAGS  = -std=c++1z -I./include -I./thirdparty/include -I./thirdparty/PEGTL/include $(DEBUG)
 VPATH 	= ./include/ $(SRC_DIR)
 
 $(PROGRAM): $(OBJS)
