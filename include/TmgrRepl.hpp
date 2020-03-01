@@ -47,7 +47,7 @@ public:
 
 public:
   Repl() {
-    net = new Network(Network::NET_T_BASIC, "net_0");
+    net = new Network(net_type::basic, "net_0");
   }
   ~Repl() {
     delete net;
@@ -68,7 +68,7 @@ private:
   }
 
   Res addNode() {
-    net->AddNode("node", "");
+    net->AddNode("node");
     return SUCCESS;
   }
 

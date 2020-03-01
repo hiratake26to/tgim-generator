@@ -26,10 +26,10 @@ Author: hiratake26to@gmail.com
 #include "schema/Schema.hpp"
 
 Network::Network()
-  : m_type(NET_T_NONE), m_name("")
+  : m_type(net_type::none), m_name("")
 { }
 
-Network::Network(NetType_t type, const std::string& name)
+Network::Network(net_type type, const std::string& name)
   : m_type(type), m_name(name)
 { }
 
@@ -37,40 +37,22 @@ Network::Network(NetType_t type, const std::string& name)
 // public:
 
 /** Add a node which is the network segment **/
-void Network::AddNode(std::string name, std::string config)
+void Network::AddNode(Node node)
 {
-  Node added { (int)m_nodes.size(), name, config };
-  m_nodes[name] = added;
+  m_nodes[node.name] = node;
 }
-
-void Network::AddNode(std::string name, std::string type, Vector3D vec, std::string config)
+void Network::AddNode(std::string name)
 {
-  Node added { (int)m_nodes.size(), name, config };
-  if (type == "Adhoc") {
-    added.type = NODE_T_ADHOC;
-  }
-  else if (type == "Ap") {
-    added.type = NODE_T_AP;
-  }
-  else if (type == "Sta") {
-    added.type = NODE_T_STA;
-  }
-  else if (type == "Basic" ){
-    added.type = NODE_T_BASIC;
-  }
-  else {
-    std::cout << "network '" << m_name << "' node '" << name << "' is no specified type, it type decides to 'Basic'." << std::endl;
-    added.type = NODE_T_BASIC;
-  }
-  added.x = vec.x;
-  added.y = vec.y;
-  added.z = vec.z;
-  m_nodes[name] = added;
+  m_nodes[name] = Node(m_nodes.size(), name);
+}
+void Network::AddNode(std::string name, Node node)
+{
+  m_nodes[name] = node;
 }
 
 void Network::AddSubnet(std::string name, const Network& subnet)
 {
-  if ( m_type != NET_T_WNET ) m_type = NET_T_WNET; // change type to NET_T_WNET
+  if ( m_type != net_type::wnet ) m_type = net_type::wnet; // change type to net_type::wnet
   m_subnets[name] = subnet;
 }
 
@@ -97,7 +79,7 @@ void Network::ConnectChannel(std::string ch_name, Node node)
 
 Node Network::UpIface(std::string subnet_name, std::string iface_name)
 {
-  if (m_subnets[subnet_name].GetType() == NET_T_NONE) {
+  if (m_subnets[subnet_name].GetType() == net_type::none) {
     throw std::runtime_error(m_name + " is has not subnet '" + subnet_name + "'");
   }
   std::map<std::string, Node> sub_n = m_subnets[subnet_name].GetNodes();
@@ -105,8 +87,8 @@ Node Network::UpIface(std::string subnet_name, std::string iface_name)
     throw std::runtime_error("node is not defined in " + subnet_name);
   }
   std::string name_with_prefix = subnet_name+"_"+sub_n[iface_name].name;
-  AddNode(name_with_prefix, sub_n[iface_name].config);
-  m_nodes[name_with_prefix].type = NODE_T_IFACE;
+  AddNode(name_with_prefix, Node(m_nodes.size(), name_with_prefix, sub_n[iface_name].config));
+  m_nodes[name_with_prefix].type = node_type::subnet;
   m_nodes[name_with_prefix].subnet_name = subnet_name;
   m_nodes[name_with_prefix].subnet_class = m_subnets[subnet_name].GetName();
   m_nodes[name_with_prefix].subnet_node_id = sub_n[iface_name].name;
@@ -124,7 +106,7 @@ std::string Network::GetName() const
   return m_name;
 }
 
-int Network::GetType() const
+net_type Network::GetType() const
 {
   return m_type;
 }

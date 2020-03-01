@@ -45,7 +45,7 @@ class NetworkGenerator {
   std::string m_name_app_func = "app";
   std::string m_name_all_nodes = "nodes";
   // type
-  int m_net_type;
+  net_type m_net_type;
   // node
   std::map<std::string, Node> m_nodes;
   // subnet

@@ -126,10 +126,10 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   //std::cout << "***CREATE ALL NODES***" << std::endl;
 
   lines.push_back("// create all nodes");
-  for (const auto& item : m_nodes) {
+  for (const auto& item: m_nodes) {
     const auto& node = item.second;
     std::string added = "CreateObject<Node>()";
-    if ( node.type == NODE_T_IFACE ) {
+    if ( node.type == node_type::subnet ) {
       added = node.subnet_name + ".nodes.Get("+node.subnet_class+"::"+node.subnet_node_id+")";
     }
     lines.push_back("{ // - " + node.name);
@@ -140,15 +140,20 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
                   + added
                   + ");");
     // if node.type is {Adhoc, Ap, Sta} then install mobility and allocate position.
-    if ( node.type == NODE_T_ADHOC
-      || node.type == NODE_T_AP
-      || node.type == NODE_T_STA) {
-      lines.push_back("// Install mobility");
-      lines.push_back("installMobility(nodes.Get("+node.name+"));");
-      lines.push_back("allocateFixedPos(nodes.Get("+node.name+"), "
-          + std::to_string(node.x) + ", "
-          + std::to_string(node.y) + ", "
-          + std::to_string(node.z) + ");");
+    for (const auto& ni : node.netifs) {
+      // install mobility
+      // if node.netifs has even one connection to wireless channel
+      if ( ni.as == node_role_type::wifi_adhoc
+        || ni.as == node_role_type::wifi_ap
+        || ni.as == node_role_type::wifi_sta) {
+        lines.push_back("// Install mobility");
+        lines.push_back("installMobility(nodes.Get("+node.name+"));");
+        lines.push_back("allocateFixedPos(nodes.Get("+node.name+"), "
+            + std::to_string(node.x) + ", "
+            + std::to_string(node.y) + ", "
+            + std::to_string(node.z) + ");");
+        break; // due to install at once
+      }
     }
 
     lines.indentLeft();
@@ -235,17 +240,23 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
       lines.push_back( "NodeContainer nc_local_ap;" );
       lines.push_back( "NodeContainer nc_local_stas;" );
       // add AP node
-      for (const auto& node : channel.nodes) if (node.type == NODE_T_AP) {
+      for (const auto& node : channel.nodes) {
         // [TODO] check that add just one AP node.
-        lines.push_back( "nc_local_ap.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
-                        + ");" );
+        for (const auto& ni : node.netifs) {
+          if (ni.connect == channel.name && ni.as == node_role_type::wifi_ap)
+          lines.push_back( "nc_local_ap.Add("
+                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + ");" );
+        }
       }
       // add STA node
-      for (const auto& node : channel.nodes) if (node.type == NODE_T_STA){
-        lines.push_back( "nc_local_stas.Add("
-                        + m_name_all_nodes + ".Get(" + node.name + ")"
-                        + ");" );
+      for (const auto& node : channel.nodes) {
+        for (const auto& ni : node.netifs) {
+          if (ni.connect == channel.name && ni.as == node_role_type::wifi_sta)
+          lines.push_back( "nc_local_stas.Add("
+                          + m_name_all_nodes + ".Get(" + node.name + ")"
+                          + ");" );
+        }
       }
       // connect Wifi
       lines.push_back( m_netdevs[channel.name] + " = "
@@ -297,7 +308,7 @@ void NetworkGenerator::gen_build(CodeSecretary& lines) {
   lines.push_back("InternetStackHelper stack;");
   for (const auto& item : m_nodes) {
     const auto& node = item.second;
-    if (node.type == NODE_T_IFACE) continue; // already installed in subnet build
+    if (node.type == node_type::subnet) continue; // already installed in subnet build
     lines.push_back("stack.Install("
                       + m_name_all_nodes + ".Get(" + node.name + ")"
                       + ");" );

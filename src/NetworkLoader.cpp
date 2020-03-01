@@ -49,7 +49,7 @@ Network NetworkLoader::load(std::string filename) {
     if (!jname.is_string()) throw std::runtime_error("name is none");
     net_name = jname.get<std::string>();
   }
-  Network net(Network::NET_T_BASIC, net_name);
+  Network net(net_type::basic, net_name);
 
   //cout << "***load channel***" << endl;
   { /* load ch */
@@ -63,13 +63,16 @@ Network NetworkLoader::load(std::string filename) {
   //cout << "***load node***" << endl;
   { /* load node */
   json jnode = j["node"];
+  int node_id = 0;
   for (auto it = jnode.begin(); it != jnode.end(); ++it) {
-    //cout << it.key() << " : " << it.value() << endl;
-    // get config
-    std::string conf;
+    Node node(node_id, it.key());
+
+    // load config
     if (!it.value()["config"].empty()) {
-      conf = it.value()["config"].dump();
+      node.config = it.value()["config"].dump();
     }
+
+    // load point .x .y
     Vector3D vec;
     try {
       vec = Vector3D { 
@@ -87,12 +90,38 @@ Network NetworkLoader::load(std::string filename) {
     } else {
       std::cerr << "node." << it.key() << ".point.z is set automatically to 0." << std::endl;
     }
+    node.SetPoint(vec);
+    
+    // set type
+    node.type = node_type::basic;
 
-    net.AddNode(it.key(), it.value()["type"], vec, conf);
-    // connect
+    // load netifs
     for (auto netif : it.value()["netifs"]) {
-      net.ConnectChannel(netif["connect"], net.GetNode(it.key()));
+      Netif ni;
+      ni.connect = netif["connect"];
+      if (netif["as"].empty()) {
+        ni.as = node_role_type::normal;
+      } else {
+        std::string as = netif["as"];
+        if ("CsmaSwicth"     == as) ni.as = node_role_type::csma_switch;
+        else if ("WifiAdhoc" == as) ni.as = node_role_type::wifi_adhoc;
+        else if ("WifiAp"    == as) ni.as = node_role_type::wifi_ap;
+        else if ("WifiSta"   == as) ni.as = node_role_type::wifi_sta;
+        else { throw std::runtime_error("Invalid netifs.as value!"); }
+      }
+      node.netifs.push_back(ni);
     }
+
+    // add node to network
+    net.AddNode(node);
+
+    // connect node.netifs to channel
+    for (auto netif : (*it)["netifs"]) {
+      net.ConnectChannel(netif["connect"], node);
+    }
+
+    // id increment
+    node_id++;
   }
   } /* load node */
 

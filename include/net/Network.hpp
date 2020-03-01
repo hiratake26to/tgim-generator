@@ -29,12 +29,13 @@ Author: hiratake26to@gmail.com
 #include "Application.hpp"
 
 /** @brief Network segment model **/
+enum class net_type : int {none, basic, wnet};
+
 class Network {
 public:
-  typedef enum {NET_T_BASIC, NET_T_WNET, NET_T_NONE } NetType_t;
 
 private:
-  NetType_t m_type;
+  net_type m_type;
   std::string m_name; // for the use of struct name
 
   std::map<std::string, Node> m_nodes;
@@ -45,15 +46,16 @@ private:
 public:
   /** Constructor **/
   explicit Network();
-  explicit Network(NetType_t type, const std::string& name);
+  explicit Network(net_type type, const std::string& name);
 
   /** Destructor **/
   virtual ~Network() = default;
 
 public:
   /** Add node to network **/
-  void AddNode(std::string name, std::string config);
-  void AddNode(std::string name, std::string type, Vector3D vec, std::string config);
+  void AddNode(Node node);
+  void AddNode(std::string name);
+  void AddNode(std::string name, Node node);
   void AddSubnet(std::string name, const Network& subnet);
   void AddChannel(std::string name, std::string type, std::string config);
   void AddApp(std::string name, std::string type, const std::map<std::string, std::string>& args);
@@ -69,7 +71,7 @@ public:
   void ChannelConfig(std::string name, std::string conf);
 
   std::string GetName() const;
-  int GetType() const;
+  net_type GetType() const;
   std::map<std::string, Node> GetNodes();
   Node GetNode(std::string node_name);
   std::map<std::string, Network> GetSubnets();

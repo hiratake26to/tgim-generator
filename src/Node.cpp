@@ -13,17 +13,19 @@ Author: hiratake26to@gmail.com
 */
 
 /**
- * \file network-prvt.hpp
- * \brief Network model class.
+ * \file Node.cpp
+ * \brief Network Node Model.
  * \author hiratake26to@gmail
- * \date 2017
+ * \date 2019
  */
 
-#pragma once
+#include "net/Node.hpp"
 
-#include <map>
-#include <memory>
-#include <string>
-#include <utility>
-#include <vector>
-#include "Types.hpp"
+Node::Node(int id, std::string name, std::string config)
+  : id(id), name(name), config(config) {}
+
+void Node::SetPoint(Vector3D vec) {
+  x = vec.x;
+  y = vec.y;
+  z = vec.z;
+}

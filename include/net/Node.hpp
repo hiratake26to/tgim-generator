@@ -23,22 +23,48 @@ Author: hiratake26to@gmail.com
 
 #include "network-prvt.hpp"
 
-#define NODE_T_BASIC 0
-#define NODE_T_IFACE 1
-#define NODE_T_ADHOC 2
-#define NODE_T_AP    3
-#define NODE_T_STA   4
+enum class node_role_type : int {
+  normal,
+  csma_switch,
+  wifi_adhoc,
+  wifi_ap,
+  wifi_sta,
+};
+
+struct Netif {
+  std::string connect;
+  node_role_type as;
+};
+
+
+enum class node_type : int {
+  basic,
+  subnet,
+};
 
 /** @brief Node */
 struct Node {
+  // id, name, config
   int id;
   std::string name;
   std::string config;
-  int type;
+
+  // type (Basic, Subnet)
+  node_type type;
+
+  // point.x .y .z
+  int x; int y; int z;
+
+  // netifs
+  std::vector<Netif> netifs;
+  
+  //
   std::string subnet_name;  // name as subnet instance
   std::string subnet_class; // subnet class name
   std::string subnet_node_id; // id for subnet class
-  int x;
-  int y;
-  int z;
+
+  //
+  Node() = default;
+  Node(int id, std::string name, std::string config = "");
+  void SetPoint(Vector3D vec);
 };
